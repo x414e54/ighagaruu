@@ -34,8 +34,8 @@ public:
 	void SetProjection();
 	void SetView(POVector3* pos, POVector3* target);
 	void BeginScene();
-	void DrawSprite(UINT textureId, RECT* src, POVector3* pos, float sx, float sw, float rotation);
-	void DrawText(UINT fontId, const std::wstring* string, RECT* dst, AntFontColorARGB* fontColor);
+	void DrawSprite(UINT textureId, const RECT& src, const RECT& dst, const POVector3& pos, float sx, float sw, float rotation);
+	void DrawText(UINT fontId, const std::wstring& string, const RECT& dst, const AntFontColorARGB& fontColor);
 	void DrawQuad(UINT textureID, RECT* rect, POVector3* pos, POVector3* Or);
 	void EndScene();
 	bool Cleanup();

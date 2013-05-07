@@ -66,6 +66,13 @@ void DXUTFindDXSDKMediaFileCch(WCHAR* bounce, UINT max, std::wstring path)
 	wcsncpy(bounce,path.c_str(),(long int)max);
 }
 
+struct D3DSURFACE_DESC
+{
+    UINT Width;
+    UINT Height;
+    D3DSURFACE_DESC(UINT width, UINT height) :  Width(width), Height(height) {}
+};
+
 //DXUTSetCallbackD3D9DeviceAcceptable( IsDeviceAcceptable );
 //DXUTSetCallbackD3D9DeviceCreated( OnCreateDevice );
 //DXUTSetCallbackD3D9DeviceReset( OnResetDevice );

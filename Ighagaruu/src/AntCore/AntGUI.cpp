@@ -3,7 +3,7 @@
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-void AntResourceManager::AddTexture(int dialogId, UINT textureId, std::wstring fileName)
+void AntResourceManager::AddTexture(AntGUIDialog* dialog, UINT textureId, std::wstring fileName)
 {
 	if (_renderer!=NULL)
 	{
@@ -12,7 +12,7 @@ void AntResourceManager::AddTexture(int dialogId, UINT textureId, std::wstring f
 		for (int i=0; i<_dialogInfos.size(); i++)
 		{
 			AntResourceManagerDialogInfo dialogInfo = _dialogInfos.at(i);
-			if (dialogIndex==-1 && dialogInfo._dialogId == dialogId) { dialogIndex=i; }
+			if (dialogIndex==-1 && dialogInfo._dialog == dialog) { dialogIndex=i; }
 
 			for (int j=0; j<dialogInfo._textureInfos.size() && texture == -1; j++)
 			{
@@ -39,7 +39,7 @@ void AntResourceManager::AddTexture(int dialogId, UINT textureId, std::wstring f
 		if (dialogIndex==-1)
 		{
 			AntResourceManagerDialogInfo dialogInfo;
-			dialogInfo._dialogId=dialogId;
+			dialogInfo._dialog=dialog;
 			dialogInfo._textureInfos.push_back(textureInfo);
 			_dialogInfos.push_back(dialogInfo);
 		} else {
@@ -50,17 +50,17 @@ void AntResourceManager::AddTexture(int dialogId, UINT textureId, std::wstring f
 	}
 }
 
-UINT AntResourceManager::GetTexture(int dialogId, UINT textureId)
+UINT AntResourceManager::GetTexture(AntGUIDialog* dialog, UINT textureId)
 {
 	for (int i=0; i<_dialogInfos.size(); i++)
 	{
-		if (_dialogInfos.at(i)._dialogId == dialogId) {
+		if (_dialogInfos.at(i)._dialog == dialog) {
 			AntResourceManagerDialogInfo dialogInfo =_dialogInfos.at(i);
 			for (int j=0; j<dialogInfo._textureInfos.size(); j++)
 			{
-				if (dialogInfo._textureInfos.at(i)._textureId == textureId)
+				if (dialogInfo._textureInfos.at(j)._textureId == textureId)
 				{
-					return dialogInfo._textureInfos.at(i)._renderTextureId;
+					return dialogInfo._textureInfos.at(j)._renderTextureId;
 				}
 			}
 		}
@@ -126,7 +126,7 @@ void AntGUIDialog::Init(AntRenderer* renderer)
 	_renderer->AddFont(L"Arial",8,12);
 }
 
-void AntGUIDialog::AddImageText(int id, const std::wstring& text, int x, int y, int h, int w)
+void AntGUIDialog::AddImageText(int id, const std::wstring& text, int x, int y, int w, int h)
 {
 	AntGUIImageText* component = new AntGUIImageText(this);
 	
@@ -134,11 +134,11 @@ void AntGUIDialog::AddImageText(int id, const std::wstring& text, int x, int y, 
 
 	component->SetId(id);
 	component->SetPos(x,y);
-	component->SetSize(h,w);
+	component->SetSize(w,h);
 	component->SetText(text);
 }
 
-void AntGUIDialog::AddButton(int id, const std::wstring& text, int x, int y, int h, int w, UINT nHotkey)
+void AntGUIDialog::AddButton(int id, const std::wstring& text, int x, int y, int w, int h, UINT nHotkey)
 {
 	AntGUIButton* component = new AntGUIButton(this);
 	
@@ -146,11 +146,11 @@ void AntGUIDialog::AddButton(int id, const std::wstring& text, int x, int y, int
 
 	component->SetId(id);
 	component->SetPos(x,y);
-	component->SetSize(h,w);
+	component->SetSize(w,h);
 	component->SetText(text);
 }
 
-void AntGUIDialog::AddComboBox(int id, int x, int y, int h, int w)
+void AntGUIDialog::AddComboBox(int id, int x, int y, int w, int h)
 {
 	AntGUIComboBox* component = new AntGUIComboBox(this);
 	
@@ -158,10 +158,10 @@ void AntGUIDialog::AddComboBox(int id, int x, int y, int h, int w)
 
 	component->SetId(id);
 	component->SetPos(x,y);
-	component->SetSize(h,w);
+	component->SetSize(w,h);
 }
 
-void AntGUIDialog::AddCheckBox(int id, const std::wstring& text, int x, int y, int h, int w)
+void AntGUIDialog::AddCheckBox(int id, const std::wstring& text, int x, int y, int w, int h)
 {
 	AntGUICheckBox* component = new AntGUICheckBox(this);
 	
@@ -169,11 +169,11 @@ void AntGUIDialog::AddCheckBox(int id, const std::wstring& text, int x, int y, i
 
 	component->SetId(id);
 	component->SetPos(x,y);
-	component->SetSize(h,w);
+	component->SetSize(w,h);
 	component->SetText(text);
 }
 
-void AntGUIDialog::AddTextBox(int id, const std::wstring& text, int x, int y, int h, int w)
+void AntGUIDialog::AddTextBox(int id, const std::wstring& text, int x, int y, int w, int h)
 {
 	AntGUITextBox* component = new AntGUITextBox(this);
 	
@@ -181,11 +181,11 @@ void AntGUIDialog::AddTextBox(int id, const std::wstring& text, int x, int y, in
 
 	component->SetId(id);
 	component->SetPos(x,y);
-	component->SetSize(h,w);
+	component->SetSize(w,h);
 	component->SetText(text);
 }
 
-void AntGUIDialog::AddTextArea(int id, const std::wstring& text, int x, int y, int h, int w)
+void AntGUIDialog::AddTextArea(int id, const std::wstring& text, int x, int y, int w, int h)
 {
 	AntGUITextArea* component = new AntGUITextArea(this);
 	
@@ -193,11 +193,11 @@ void AntGUIDialog::AddTextArea(int id, const std::wstring& text, int x, int y, i
 
 	component->SetId(id);
 	component->SetPos(x,y);
-	component->SetSize(h,w);
+	component->SetSize(w,h);
 	component->SetText(text);
 }
 
-void AntGUIDialog::AddListBox(int id, int x, int y, int h, int w)
+void AntGUIDialog::AddListBox(int id, int x, int y, int w, int h)
 {
 	AntGUIListBox* component = new AntGUIListBox(this);
 	
@@ -205,10 +205,10 @@ void AntGUIDialog::AddListBox(int id, int x, int y, int h, int w)
 
 	component->SetId(id);
 	component->SetPos(x,y);
-	component->SetSize(h,w);
+	component->SetSize(w,h);
 }
 
-void AntGUIDialog::AddSlider(int id, int x, int y, int h, int w, int min, int max, int value)
+void AntGUIDialog::AddSlider(int id, int x, int y, int w, int h, int min, int max, int value)
 {
 	AntGUISlider* component = new AntGUISlider(this);
 	
@@ -216,13 +216,13 @@ void AntGUIDialog::AddSlider(int id, int x, int y, int h, int w, int min, int ma
 
 	component->SetId(id);
 	component->SetPos(x,y);
-	component->SetSize(h,w);
+	component->SetSize(w,h);
 	component->SetMin(min);
 	component->SetMax(max);
 	component->SetValue(value);
 }
 
-void AntGUIDialog::AddProgressBar(int id, int x, int y, int h, int w, int min, int max, int value)
+void AntGUIDialog::AddProgressBar(int id, int x, int y, int w, int h, int min, int max, int value)
 {
 	AntGUIProgressBar* component = new AntGUIProgressBar(this);
 	
@@ -230,7 +230,7 @@ void AntGUIDialog::AddProgressBar(int id, int x, int y, int h, int w, int min, i
 
 	component->SetId(id);
 	component->SetPos(x,y);
-	component->SetSize(h,w);
+	component->SetSize(w,h);
 	component->SetMin(min);
 	component->SetMax(max);
 	component->SetValue(value);
@@ -328,32 +328,37 @@ void AntGUIDialog::Render(float time, AntRenderer* renderer)
 	_renderer = tmp;
 }
 
-void AntGUIDialog::DrawText(UINT fontId, const std::wstring& string, AntFontColorARGB* fontColor, RECT* dst)
+void AntGUIDialog::DrawText(UINT fontId, const std::wstring& string, const AntFontColorARGB* fontColor, RECT dst)
 {
-	OffsetRect(dst, _x, _y);
+	OffsetRect(&dst, _x, _y);
 	//int h=_renderer->GetFont(fontId)->h;
 	//int w=_renderer->GetFont(fontId)->w;
 	//dst->left+=(Height(dst)-h)/2;
 	//dst->top+=(Height(dst)-h)/2;
 
 	//_manager->GetFont(fontId)->dxfont->DrawText(_manager->GetSprite().dxsprite, string, -1, &dst, 0, D3DCOLOR_ARGB(fontColor._A, fontColor._R, fontColor._G, fontColor._B));
-	_renderer->DrawText(fontId, string, dst, fontColor);
+	_renderer->DrawText(fontId, string, dst, *fontColor);
 }
 
-void AntGUIDialog::DrawSprite(UINT textureId, RECT* src, RECT* dst)
+void AntGUIDialog::DrawSprite(UINT textureId, const RECT* src, RECT dst)
 {
-    OffsetRect(dst, _x, _y);
+	if (_manager!=NULL)
+	{
+		textureId=_manager->GetTexture(this,textureId);
+	}
 
-	POVector3 pos((float)dst->left, (float)dst->top, 0.0f);
+    OffsetRect(&dst, _x, _y);
+
+	POVector3 pos(0.0f, 0.0f, 0.0f);
 	//_manager->GetSprite().dxsprite->Draw(_manager->GetTexture(textureId)->dxTexture, &src, NULL, &pos, 0xFFFFFFFF);
-	_renderer->DrawSprite(textureId, src, &pos);
+	_renderer->DrawSprite(textureId, *src, dst, pos);
 }
 
 void AntGUIDialog::SetTexture(UINT index, std::wstring string)
 {
 	if (_manager!=NULL)
 	{
-		_manager->AddTexture(this->_id,index,string);
+		_manager->AddTexture(this,index,string);
 	} else {
 		fprintf(stderr,"SetTextureFailed(ManagerNull)");
 	}
@@ -395,7 +400,10 @@ AntGUIImageText::AntGUIImageText(AntGUIDialog* parent)
 	_type=ANTGUI_COMPONENT_IMAGETEXT;
 
 	AntGUIElement elem;
+	RECT rct;
 	elem.SetFont(0,AntFontColorARGB(255,255,0,0));
+	SetRect(&rct,0,0,0,0);
+	elem.SetTexture(0,rct);
 	_elements.push_back(elem);
 	_parent=parent;
 }
@@ -407,7 +415,8 @@ void AntGUIImageText::SetText(const std::wstring& text)
 
 void AntGUIImageText::Render(float time)
 {
-	_parent->DrawText(_elements.at(0).GetFont(), _text, _elements.at(0).GetFontColor(), &_boundingBox);
+	_parent->DrawSprite(_elements.at(0).GetTexture(), _elements.at(0).GetTextureRect(), _boundingBox);
+	_parent->DrawText(_elements.at(0).GetFont(), _text, _elements.at(0).GetFontColor(), _boundingBox);
 }
 
 //-----------------------------------------------------------------------------
@@ -445,16 +454,16 @@ void AntGUIButton::Render(float time)
 {
 	if (_pressed)
 	{
-		_parent->DrawSprite(_elements.at(3).GetTexture(), _elements.at(3).GetTextureRect(), &_boundingBox);
-		_parent->DrawText(_elements.at(3).GetFont(), _text, _elements.at(3).GetFontColor(), &_boundingBox);
+		_parent->DrawSprite(_elements.at(3).GetTexture(), _elements.at(3).GetTextureRect(), _boundingBox);
+		_parent->DrawText(_elements.at(3).GetFont(), _text, _elements.at(3).GetFontColor(), _boundingBox);
 	} else if (_mouseOver)
 	{
-		_parent->DrawSprite(_elements.at(2).GetTexture(), _elements.at(2).GetTextureRect(), &_boundingBox);
-		_parent->DrawText(_elements.at(2).GetFont(), _text, _elements.at(2).GetFontColor(), &_boundingBox);
+		_parent->DrawSprite(_elements.at(2).GetTexture(), _elements.at(2).GetTextureRect(), _boundingBox);
+		_parent->DrawText(_elements.at(2).GetFont(), _text, _elements.at(2).GetFontColor(), _boundingBox);
 	} else
 	{
-		_parent->DrawSprite(_elements.at(1).GetTexture(), _elements.at(1).GetTextureRect(), &_boundingBox);
-		_parent->DrawText(_elements.at(1).GetFont(), _text,  _elements.at(1).GetFontColor(), &_boundingBox);
+		_parent->DrawSprite(_elements.at(1).GetTexture(), _elements.at(1).GetTextureRect(), _boundingBox);
+		_parent->DrawText(_elements.at(1).GetFont(), _text,  _elements.at(1).GetFontColor(), _boundingBox);
 	}
 }
 
@@ -547,13 +556,13 @@ void AntGUIComboBox::Render(float time)
 {
 	RECT frameRect = {_x,_y,_x+_w,_y+_h};
 	RECT buttonRect = {_x+_w,_y,_x+_w+Width(_elements.at(2).GetTextureRect()),_y+_h};
-	_parent->DrawSprite(_elements.at(1).GetTexture(), _elements.at(1).GetTextureRect(), &frameRect);
+	_parent->DrawSprite(_elements.at(1).GetTexture(), _elements.at(1).GetTextureRect(), frameRect);
 	if (_selected!=NULL)
 	{
-		_parent->DrawText(_elements.at(1).GetFont(), _selected->_text, _elements.at(1).GetFontColor(), &frameRect);
+		_parent->DrawText(_elements.at(1).GetFont(), _selected->_text, _elements.at(1).GetFontColor(), frameRect);
 	} else 
 	{
-		_parent->DrawText(_elements.at(1).GetFont(), L"", _elements.at(1).GetFontColor(), &frameRect);
+		_parent->DrawText(_elements.at(1).GetFont(), L"", _elements.at(1).GetFontColor(), frameRect);
 	}
 	if (_opened)
 	{
@@ -562,20 +571,20 @@ void AntGUIComboBox::Render(float time)
 		{
 			OffsetRect(&optionRect,0,-Height(_elements.at(6).GetTextureRect()));
 			if (&_options.at(i)!=_hover) {
-				_parent->DrawSprite(_elements.at(6).GetTexture(), _elements.at(6).GetTextureRect(), &optionRect);
+				_parent->DrawSprite(_elements.at(6).GetTexture(), _elements.at(6).GetTextureRect(), optionRect);
 			}
-			_parent->DrawText(_elements.at(6).GetFont(), _options.at(i)._text, _elements.at(6).GetFontColor(), &optionRect);
+			_parent->DrawText(_elements.at(6).GetFont(), _options.at(i)._text, _elements.at(6).GetFontColor(), optionRect);
 		}
 		RECT topRect = {_x,_y,_x+Width(_elements.at(5).GetTextureRect()),_y+Height(_elements.at(5).GetTextureRect())};
 		OffsetRect(&topRect,0,-((int)_options.size()*Height(_elements.at(6).GetTextureRect()))-Height(_elements.at(5).GetTextureRect()));
-		_parent->DrawSprite(_elements.at(5).GetTexture(), _elements.at(5).GetTextureRect(), &topRect);
-		_parent->DrawSprite(_elements.at(4).GetTexture(), _elements.at(4).GetTextureRect(), &buttonRect);
+		_parent->DrawSprite(_elements.at(5).GetTexture(), _elements.at(5).GetTextureRect(), topRect);
+		_parent->DrawSprite(_elements.at(4).GetTexture(), _elements.at(4).GetTextureRect(), buttonRect);
 	} else if (_mouseOver)
 	{
-		_parent->DrawSprite(_elements.at(3).GetTexture(), _elements.at(3).GetTextureRect(), &buttonRect);
+		_parent->DrawSprite(_elements.at(3).GetTexture(), _elements.at(3).GetTextureRect(), buttonRect);
 	} else 
 	{
-		_parent->DrawSprite(_elements.at(2).GetTexture(), _elements.at(2).GetTextureRect(), &buttonRect);
+		_parent->DrawSprite(_elements.at(2).GetTexture(), _elements.at(2).GetTextureRect(), buttonRect);
 	}
 }
 
@@ -672,13 +681,13 @@ void AntGUICheckBox::Render(float time)
 	if (_checked)
 	{
 		RECT text= {_x+Width(_elements.at(2).GetTextureRect()), _y, _x+_w-Width(_elements.at(2).GetTextureRect()), _y+_h};
-		_parent->DrawSprite(_elements.at(2).GetTexture(), _elements.at(2).GetTextureRect(), &_boundingBox);
-		_parent->DrawText(_elements.at(2).GetFont(), _text, _elements.at(2).GetFontColor(), &text);
+		_parent->DrawSprite(_elements.at(2).GetTexture(), _elements.at(2).GetTextureRect(), _boundingBox);
+		_parent->DrawText(_elements.at(2).GetFont(), _text, _elements.at(2).GetFontColor(), text);
 	} else
 	{
 		RECT text= {_x+Width(_elements.at(1).GetTextureRect()), _y, _x+_w-Width(_elements.at(2).GetTextureRect()), _y+_h};
-		_parent->DrawSprite(_elements.at(1).GetTexture(), _elements.at(1).GetTextureRect(), &_boundingBox);
-		_parent->DrawText(_elements.at(1).GetFont(), _text,  _elements.at(1).GetFontColor(), &text);
+		_parent->DrawSprite(_elements.at(1).GetTexture(), _elements.at(1).GetTextureRect(), _boundingBox);
+		_parent->DrawText(_elements.at(1).GetFont(), _text,  _elements.at(1).GetFontColor(), text);
 	}
 }
 
@@ -716,8 +725,8 @@ AntGUITextBox::AntGUITextBox(AntGUIDialog* parent)
 
 void AntGUITextBox::Render(float time)
 {
-	_parent->DrawSprite(_elements.at(1).GetTexture(), _elements.at(1).GetTextureRect(), &_boundingBox);
-	_parent->DrawText(_elements.at(1).GetFont(), _text,  _elements.at(1).GetFontColor(), &_boundingBox);
+	_parent->DrawSprite(_elements.at(1).GetTexture(), _elements.at(1).GetTextureRect(), _boundingBox);
+	_parent->DrawText(_elements.at(1).GetFont(), _text,  _elements.at(1).GetFontColor(), _boundingBox);
 }
 
 bool AntGUITextBox::Event( UINT uMsg, UINT p1, UINT p2 )

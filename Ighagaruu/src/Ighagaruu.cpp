@@ -324,6 +324,7 @@ std::string serverip;
 //bool    ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* pUserContext );
 //HRESULT OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext );
 //HRESULT OnResetDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext );
+void OnResetDevice(const D3DSURFACE_DESC* pBackBufferSurfaceDesc);
 
 void    OnFrameMove(float fTime);
 void    CharacterFrameMove(float  fTime);
@@ -387,7 +388,8 @@ int main(int argc, char* argv)
 	}
 	g_DialogResourceManager._renderer = Renderer;
 	InitApp();
-
+	D3DSURFACE_DESC surface = D3DSURFACE_DESC(Settings._width,Settings._height);
+	OnResetDevice(&surface);
 
 	WCHAR wszBounce[MAX_PATH];
 	g_SndMgr.Initialize( DXUTGetHWND(), DSSCL_PRIORITY );
@@ -895,9 +897,9 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
 	g_StaticCamera.SetViewParams( &staticcvecEye, &staticcvecAt );
 	g_mMapWorld=*g_Camera.GetWorldMatrix(); 
 	return S_OK;
-}
+}*/
 
-
+/*
 //--------------------------------------------------------------------------------------
 // Create any D3D9 resources that won't live through a device reset (D3DPOOL_DEFAULT) 
 // or that are tied to the back buffer size 
@@ -926,7 +928,9 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 	//float fAspectRatio = pBackBufferSurfaceDesc->Width / (FLOAT)pBackBufferSurfaceDesc->Height;
 	g_StaticCamera.SetProjParams( D3DX_PI/4, fAspectRatio, 0.1f, 5000.0f );
 	g_StaticCamera.SetWindow( pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height );
-
+	*/
+void OnResetDevice(const D3DSURFACE_DESC* pBackBufferSurfaceDesc)
+{
 	g_TopUI.SetLocation( 0, 0 );
 	g_TopUI.SetSize( pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height );
 	g_CharacterChooseUI.SetLocation((((pBackBufferSurfaceDesc->Width-800)/2)), (((pBackBufferSurfaceDesc->Height-600)/2)));
@@ -947,7 +951,8 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 	g_RedTextUI.SetSize( pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height );
 
 	g_ScoreUI.SetLocation( pBackBufferSurfaceDesc->Width-146, 10);
-	g_Mesh.RestoreDeviceObjects( pd3dDevice );
+}
+	/*g_Mesh.RestoreDeviceObjects( pd3dDevice );
 	g_Avatar[0].RestoreDeviceObjects( pd3dDevice );
 	g_Mesh3.RestoreDeviceObjects( pd3dDevice );
 	g_Flag.RestoreDeviceObjects( pd3dDevice );

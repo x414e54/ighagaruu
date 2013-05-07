@@ -11,8 +11,8 @@ AntSettings::AntSettings()
 {
 	/* Default settings */
 	_deviceType				= ANTDEVICE_GL;
-	_width					= 640;
-	_height					= 480;
+	_width					= 1920;
+	_height					= 1200;
 	_multiSampleType		= 0;
 	_fullscreen				= false;
 	

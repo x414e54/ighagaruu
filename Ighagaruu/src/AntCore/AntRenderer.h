@@ -69,10 +69,10 @@ public:
 	virtual void SetView(POVector3 pos, POVector3 target) { return SetView(&pos, &target); }
 	virtual void BeginScene() { return; }
 	virtual void EndScene() { return; }
-	virtual void DrawSprite(UINT textureId, RECT* src, POVector3* pos, float sx, float sw, float rotation) { return; }
-	virtual void DrawSprite(UINT textureId, RECT* src, POVector3 pos, float sx, float sw, float rotation) { return DrawSprite(textureId, src, &pos, sx, sw, rotation); }
-	virtual void DrawSprite(UINT textureID, RECT* src, POVector3* pos) { DrawSprite(textureID, src, pos, 1.0f, 1.0f, 0.0f); }
-	virtual void DrawText(UINT fontId, const std::wstring& string, RECT* dst, AntFontColorARGB* fontColor) { return; }
+	virtual void DrawSprite(UINT textureId, const RECT& src, const RECT& dst, const POVector3& pos, float sx, float sw, float rotation) { return; }
+	//virtual void DrawSprite(UINT textureId, const RECT& src, POVector3 pos, float sx, float sw, float rotation) { return DrawSprite(textureId, src, &pos, sx, sw, rotation); }
+	virtual void DrawSprite(UINT textureID, const RECT& src, const RECT& dst, const POVector3& pos) { DrawSprite(textureID, src, dst, pos, 1.0f, 1.0f, 0.0f); }
+	virtual void DrawText(UINT fontId, const std::wstring& string, const RECT& dst, const AntFontColorARGB& fontColor) { return; }
 	virtual void DrawQuad(UINT textureID, RECT* rect, POVector3* pos, POVector3* Or) { return; }
 	virtual void DrawQuad(UINT textureID, RECT* rect, POVector3 pos, POVector3 Or) { return DrawQuad(textureID, rect, &pos, &Or); }
 	virtual bool Cleanup() { return false; }
@@ -88,6 +88,7 @@ protected:
 	std::vector<AntMesh*> _meshes;
 	std::vector<AntFont*> _fonts;
 	std::vector<AntTexture*> _textures;
+	AntSettings _settings;
 };
 
 #endif

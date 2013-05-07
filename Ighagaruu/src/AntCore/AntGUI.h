@@ -92,14 +92,14 @@ class AntResourceManager
 	};
 	struct AntResourceManagerDialogInfo
 	{
-		int _dialogId;
+		AntGUIDialog* _dialog;
 		std::vector<AntResourceManagerDialogTextureInfo> _textureInfos;
 	};
 public:
 	AntRenderer* _renderer;
 	UINT numTextures;
-	void AddTexture(int dialogId, UINT textureId, std::wstring string);
-	UINT GetTexture(int dialogId, UINT textureId);
+	void AddTexture(AntGUIDialog* dialog, UINT textureId, std::wstring string);
+	UINT GetTexture(AntGUIDialog* dialog, UINT textureId);
 	std::vector<AntResourceManagerDialogInfo> _dialogInfos;
 };
 
@@ -119,19 +119,19 @@ public:
 	~AntGUIDialog();
 	void Init(AntRenderer* renderer);
 	void Init(AntResourceManager* manager, bool somebool, std::wstring string) {  Init(manager); SetTexture(0, string); }
-	void Init(AntResourceManager* manager) {  _manager = manager; _renderer = manager->_renderer; }
+	void Init(AntResourceManager* manager) {  _manager = manager; _renderer = manager->_renderer; _visible=true; _enabled=true;}
 
-	void AddImageText(int id, const std::wstring& string, int x, int y, int h, int w);
-	void AddStatic(int id, const std::wstring& string, int x, int y, int h, int w) { AddImageText(id,string,x,y,h,w); }
-	void AddButton(int id, const std::wstring& string, int x, int y, int h, int w, UINT nHotkey=0);
-	void AddComboBox(int id, int x, int y, int h, int w);
-	void AddCheckBox(int id, const std::wstring& string, int x, int y, int h, int w);
-	void AddTextBox(int id, const std::wstring& string, int x, int y, int h, int w);
-	void AddEditBox(int id, const std::wstring& string, int x, int y, int h, int w) { AddTextBox(id,string,x,y,h,w); }
-	void AddTextArea(int id, const std::wstring& string, int x, int y, int h, int w);
-	void AddListBox(int id, int x, int y, int h, int w);
-	void AddSlider(int id, int x, int y, int h, int w, int min=0, int max=100, int value=0);
-	void AddProgressBar(int id, int x, int y, int h, int w, int min=0, int max=100, int value=0);
+	void AddImageText(int id, const std::wstring& string, int x, int y, int w, int h);
+	void AddStatic(int id, const std::wstring& string, int x, int y, int w, int h) { AddImageText(id,string,x,y,w,h); }
+	void AddButton(int id, const std::wstring& string, int x, int y, int w, int h, UINT nHotkey=0);
+	void AddComboBox(int id, int x, int y, int w, int h);
+	void AddCheckBox(int id, const std::wstring& string, int x, int y, int w, int h);
+	void AddTextBox(int id, const std::wstring& string, int x, int y, int w, int h);
+	void AddEditBox(int id, const std::wstring& string, int x, int y, int w, int h) { AddTextBox(id,string,x,y,w,h); }
+	void AddTextArea(int id, const std::wstring& string, int x, int y, int w, int h);
+	void AddListBox(int id, int x, int y, int w, int h);
+	void AddSlider(int id, int x, int y, int w, int h, int min=0, int max=100, int value=0);
+	void AddProgressBar(int id, int x, int y, int w, int h, int min=0, int max=100, int value=0);
 
 	AntGUIImageText* GetImageText(int id) { return (AntGUIImageText*) GetComponent(id, ANTGUI_COMPONENT_IMAGETEXT); }
 	AntGUIImageText* GetStatic(int id) { return (AntGUIImageText*) GetComponent(id, ANTGUI_COMPONENT_IMAGETEXT); }
@@ -150,7 +150,7 @@ public:
 	AntGUIComponent* GetIntersect(int x, int y);
 	void AddComponent(AntGUIComponent* component);
 
-	void SetSize(int h, int w) { _h=h; _w=w; }
+	void SetSize(int w, int h) { _h=h; _w=w; }
 	void SetPos(int x, int y) { _x=x; _y=y; }
 	void SetLocation(int x, int y) { _x=x; _y=y; }
 	void SetTexture(UINT index, std::wstring string);
@@ -163,8 +163,8 @@ public:
 	void Render(float time) { Render(time,_renderer); }
 	void Render(float time, AntRenderer* renderer);
 
-	void DrawText(UINT fontId, const std::wstring& string, AntFontColorARGB* fontColor, RECT* dst);
-	void DrawSprite(UINT textureID, RECT* src, RECT* dst);
+	void DrawText(UINT fontId, const std::wstring& string, const AntFontColorARGB* fontColor, RECT dst);
+	void DrawSprite(UINT textureID, const RECT* src, RECT dst);
 
 	void Show(bool show) { _visible=show; }
 	bool IsVisible() { return _visible; }
@@ -202,7 +202,7 @@ public:
 
 	virtual void Render(float time) { };
 
-	void SetSize(int h, int w) { _h=h; _w=w; UpdateBoundingBox();}
+	void SetSize(int w, int h) { _h=h; _w=w; UpdateBoundingBox();}
 	void SetPos(int x, int y) { _x=x; _y=y; UpdateBoundingBox();}
 
 	UINT GetId() { return _id; }

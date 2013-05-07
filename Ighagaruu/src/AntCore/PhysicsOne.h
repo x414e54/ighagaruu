@@ -476,15 +476,15 @@ struct RECT
 {
 	int x;
 	int y;
-	int h;
 	int w;
+	int h;
 	int right;
 	int left;
 	int top;
 	int bottom;
 };
 
-static void SetRect(RECT* rect, int x, int y, int h, int w)
+static void SetRect(RECT* rect, int x, int y, int w, int h)
 {
 	rect->x = x;
 	rect->y = y;
@@ -494,6 +494,12 @@ static void SetRect(RECT* rect, int x, int y, int h, int w)
 
 static void OffsetRect(RECT* rect, int x, int y)
 {
+	rect->x += x;
+	rect->y += y;
+	rect->right += x;
+	rect->top += y;
+	rect->left += x;
+	rect->bottom += y;
 }
 
 static float CalcAngle(float a1, float a2)
