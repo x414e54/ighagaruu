@@ -83,8 +83,23 @@ struct AntGUITabPaneElem
 
 class AntResourceManager
 {
+	struct AntResourceManagerDialogTextureInfo
+	{
+		UINT _textureId;
+		AntTexture* _texture;
+		UINT _renderTextureId;
+	};
+	struct AntResourceManagerDialogInfo
+	{
+		int _dialogId;
+		std::vector<AntResourceManagerDialogTextureInfo> _textureInfos;
+	};
 public:
-	AntRenderer* renderer;
+	AntRenderer* _renderer;
+	UINT numTextures;
+	void AddTexture(int dialogId, UINT textureId, std::wstring string);
+	UINT GetTexture(int dialogId, UINT textureId);
+	std::vector<AntResourceManagerDialogInfo> _dialogInfos;
 };
 
 //-----------------------------------------------------------------------------
@@ -102,8 +117,8 @@ public:
 	AntGUIDialog();
 	~AntGUIDialog();
 	void Init(AntRenderer* renderer);
-	void Init(AntResourceManager* manager, bool somebool, std::wstring string) { Init(manager); }
-	void Init(AntResourceManager* manager) {  _manager = manager; }
+	void Init(AntResourceManager* manager, bool somebool, std::wstring string) {  Init(manager); SetTexture(0, string); }
+	void Init(AntResourceManager* manager) {  _manager = manager; _renderer = manager->_renderer; }
 
 	void AddImageText(int id, const std::wstring& string, int x, int y, int h, int w);
 	void AddStatic(int id, const std::wstring& string, int x, int y, int h, int w) { AddImageText(id,string,x,y,h,w); }

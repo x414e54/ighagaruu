@@ -1,5 +1,6 @@
 #include "GLRenderer.h"
 #include "nv_dds.h"
+#include "Ant.h"
 
 //-----------------------------------------------------------------------------
 // Init opengl
@@ -28,7 +29,7 @@ bool GLRenderer::Init(AntSettings settings)
  
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,  2);
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-		//settings._programName.
+		//settings._programName.@FIXTHIS
 		window =  SDL_CreateWindow("settings._programName", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 				settings._width, settings._height, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
@@ -190,7 +191,9 @@ void GLRenderer::AddTexture(UINT textureId, const std::wstring& fileName)
 	if (fileName.find(L".dds") != std::wstring::npos)
 	{
 		nv_dds::CDDSImage image;
-		image.load("controls.dds");//fileName);
+		std::string str = Convert(fileName);
+		str.replace(str.find("\\"), 1, "/"); //@FIXTHIS - Move this somewhere better
+		image.load(str.c_str());//fileName);
 		texture->h=image.get_height();
 		texture->w=image.get_width();
 	    //glPushAttrib(GL_TEXTURE_BIT);

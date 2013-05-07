@@ -55,6 +55,7 @@ void DXUTCreateWindow(std::wstring name)
 	{
 		fprintf(stderr,"DisplayInitFailed(CannotContinue)"); return;
 	}
+
 }
 void DXUTInit(bool a, bool b) {}
 void DXUTSetHotkeyHandling(bool a, bool b, bool c) {}

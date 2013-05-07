@@ -1,6 +1,73 @@
 #include "AntGUI.h"
 
 //-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+void AntResourceManager::AddTexture(int dialogId, UINT textureId, std::wstring fileName)
+{
+	if (_renderer!=NULL)
+	{
+		UINT texture = -1;
+		int dialogIndex = -1;
+		for (int i=0; i<_dialogInfos.size(); i++)
+		{
+			AntResourceManagerDialogInfo dialogInfo = _dialogInfos.at(i);
+			if (dialogIndex==-1 && dialogInfo._dialogId == dialogId) { dialogIndex=i; }
+
+			for (int j=0; j<dialogInfo._textureInfos.size() && texture == -1; j++)
+			{
+				AntResourceManagerDialogTextureInfo textureInfo = dialogInfo._textureInfos.at(j);
+				if (textureInfo._texture->fileName==fileName)
+				{
+					texture=textureInfo._renderTextureId;
+				}
+			}
+		}
+
+		if (texture==-1)
+		{
+			_renderer->AddTexture(++numTextures,fileName); // @FIXTHIS need to sync between manager and render storage, just leave to manager?
+			//texture=_renderer->GetTexture(numTextures);
+			texture=numTextures;
+		}
+
+		AntResourceManagerDialogTextureInfo textureInfo;
+		textureInfo._renderTextureId=texture;
+		textureInfo._textureId=textureId;
+
+		if (dialogIndex==-1)
+		{
+			AntResourceManagerDialogInfo dialogInfo;
+			dialogInfo._dialogId=dialogId;
+			dialogInfo._textureInfos.push_back(textureInfo);
+			_dialogInfos.push_back(dialogInfo);
+		} else {
+			_dialogInfos.at(dialogIndex)._textureInfos.push_back(textureInfo);
+		}
+	} else {
+		fprintf(stderr,"AddTexture(Null Renderer)");
+	}
+}
+
+UINT AntResourceManager::GetTexture(int dialogId, UINT textureId)
+{
+	for (int i=0; i<_dialogInfos.size(); i++)
+	{
+		if (_dialogInfos.at(i)._dialogId == dialogId) {
+			AntResourceManagerDialogInfo dialogInfo =_dialogInfos.at(i);
+			for (int j=0; j<dialogInfo._textureInfos.size(); j++)
+			{
+				if (dialogInfo._textureInfos.at(i)._textureId == textureId)
+				{
+					return dialogInfo._textureInfos.at(i)._renderTextureId;
+				}
+			}
+		}
+	}
+	return -1;
+}
+
+//-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
 void AntGUIElement::SetTexture(UINT id, RECT textureRect)
@@ -281,7 +348,15 @@ void AntGUIDialog::DrawSprite(UINT textureId, RECT* src, RECT* dst)
 	_renderer->DrawSprite(textureId, src, &pos);
 }
 
-void AntGUIDialog::SetTexture(UINT index, std::wstring string) {}
+void AntGUIDialog::SetTexture(UINT index, std::wstring string)
+{
+	if (_manager!=NULL)
+	{
+		_manager->AddTexture(this->_id,index,string);
+	} else {
+		fprintf(stderr,"SetTextureFailed(ManagerNull)");
+	}
+}
 void AntGUIDialog::SetFont(UINT index, std::wstring name, long height, long weight) {}
 
 //-----------------------------------------------------------------------------

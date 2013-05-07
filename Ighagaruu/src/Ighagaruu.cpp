@@ -380,11 +380,14 @@ int main(int argc, char* argv)
 
 	myChar=NULL;
 	target=NULL;
-	InitApp();
+
 	if(!AntWrapInit(&Renderer, Settings, L"TeapotRacer")) {
 		fprintf(stderr,"DisplayInitFailed(CannotContinue)"); return -1;
 		//MessageBox(0, L"DisplayInitFailed(CannotContinue)", 0, 0);
 	}
+	g_DialogResourceManager._renderer = Renderer;
+	InitApp();
+
 
 	WCHAR wszBounce[MAX_PATH];
 	g_SndMgr.Initialize( DXUTGetHWND(), DSSCL_PRIORITY );
@@ -1139,6 +1142,10 @@ void OnFrameRender(float fTime)
 }
 
 void IntroFrameRender(float fTime) {
+	float z = sin ((float)fTime/10)/8.0f;
+	float y = sin ((float)fTime/10)/8.0f;
+	Renderer->SetView(POVector3(z,10.0f,-3.0f),POVector3(0.0f,0.0f,0.0f));		// Set view matrix
+
 	/*HRESULT hr;
 	D3DXMATRIXA16 mWorld;
 	D3DXMATRIXA16 mView;
@@ -1187,6 +1194,7 @@ void IntroFrameRender(float fTime) {
 		g_pEffect->EndPass();
 	}
 	g_pEffect->End();*/
+	Renderer->DrawMesh(0,POVector3(0.0f, 0.0f, 0.0f), POVector3(0.0f, 0.0f, 0.0f));
 	g_LoginUI.Render( fTime );
 	g_LoginPopUp.Render( fTime );
 }
