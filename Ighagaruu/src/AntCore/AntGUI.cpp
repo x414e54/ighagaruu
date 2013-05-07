@@ -17,7 +17,7 @@ void AntResourceManager::AddTexture(int dialogId, UINT textureId, std::wstring f
 			for (int j=0; j<dialogInfo._textureInfos.size() && texture == -1; j++)
 			{
 				AntResourceManagerDialogTextureInfo textureInfo = dialogInfo._textureInfos.at(j);
-				if (textureInfo._texture->fileName==fileName)
+				if (textureInfo._fileName==fileName)
 				{
 					texture=textureInfo._renderTextureId;
 				}
@@ -26,14 +26,15 @@ void AntResourceManager::AddTexture(int dialogId, UINT textureId, std::wstring f
 
 		if (texture==-1)
 		{
-			_renderer->AddTexture(++numTextures,fileName); // @FIXTHIS need to sync between manager and render storage, just leave to manager?
+			_renderer->AddTexture(numTextures,fileName); // @FIXTHIS need to sync between manager and render storage, just leave to manager?
 			//texture=_renderer->GetTexture(numTextures);
-			texture=numTextures;
+			texture=numTextures++;
 		}
 
 		AntResourceManagerDialogTextureInfo textureInfo;
 		textureInfo._renderTextureId=texture;
 		textureInfo._textureId=textureId;
+		textureInfo._fileName=fileName;
 
 		if (dialogIndex==-1)
 		{

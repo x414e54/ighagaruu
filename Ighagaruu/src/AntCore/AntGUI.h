@@ -88,6 +88,7 @@ class AntResourceManager
 		UINT _textureId;
 		AntTexture* _texture;
 		UINT _renderTextureId;
+		std::wstring _fileName;
 	};
 	struct AntResourceManagerDialogInfo
 	{
