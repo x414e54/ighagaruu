@@ -4,6 +4,7 @@
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include "SDL2/SDL_image.h"
 
 //Open Asset Import Library Sample SimpleOpenGL.c
 //Move to its own class later
@@ -27,7 +28,7 @@ void set_float4(float f[4], float a, float b, float c, float d)
 }
 
 // ----------------------------------------------------------------------------
-void apply_material(const aiMaterial *mtl)
+void apply_material(const aiMaterial *mtl,AntRenderer* renderer)
 {
 	float c[4];
 
@@ -41,6 +42,15 @@ void apply_material(const aiMaterial *mtl)
 	int two_sided;
 	int wireframe;
 	unsigned int max;
+	int texIndex = 0;
+	aiString texPath;   //contains filename of texture
+	if(AI_SUCCESS == mtl->GetTexture(aiTextureType_DIFFUSE, texIndex, &texPath))    {
+	    //texPath.data;
+	    UINT textureId = 6;
+	    renderer->AddTexture(textureId, L"media/"+ Convert(std::string(texPath.data)));
+		AntTexture* texture = renderer->GetTexture(textureId);
+		glBindTexture(GL_TEXTURE_2D, *(GLuint*)texture->texture);
+	}
 
 	set_float4(c, 0.8f, 0.8f, 0.8f, 1.0f);
 	if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_DIFFUSE, &diffuse))
@@ -86,14 +96,14 @@ void apply_material(const aiMaterial *mtl)
 	glPolygonMode(GL_FRONT_AND_BACK, fill_mode);
 
 	max = 1;
-	if((AI_SUCCESS == aiGetMaterialIntegerArray(mtl, AI_MATKEY_TWOSIDED, &two_sided, &max)) && two_sided)
+	/*if((AI_SUCCESS == aiGetMaterialIntegerArray(mtl, AI_MATKEY_TWOSIDED, &two_sided, &max)) && two_sided)
 		glDisable(GL_CULL_FACE);
 	else
-		glEnable(GL_CULL_FACE);
+		glEnable(GL_CULL_FACE);*///@FIXTHIS MUST ENABLE CULLING
 }
 
 // ----------------------------------------------------------------------------
-void recursive_render (const aiScene *sc, const aiNode* nd,const aiScene* scene)
+void recursive_render (const aiScene *sc, const aiNode* nd,const aiScene* scene, AntRenderer* renderer)
 {
 	unsigned int i;
 	unsigned int n = 0, t;
@@ -108,13 +118,13 @@ void recursive_render (const aiScene *sc, const aiNode* nd,const aiScene* scene)
 	for (; n < nd->mNumMeshes; ++n) {
 		const aiMesh* mesh = scene->mMeshes[nd->mMeshes[n]];
 
-		apply_material(sc->mMaterials[mesh->mMaterialIndex]);
+		apply_material(sc->mMaterials[mesh->mMaterialIndex], renderer);
 
-		if(mesh->mNormals == NULL) {
+		/*if(mesh->mNormals == NULL) {
 			glDisable(GL_LIGHTING);
 		} else {
 			glEnable(GL_LIGHTING);
-		}
+		}*/
 
 		for (t = 0; t < mesh->mNumFaces; ++t) {
 			const aiFace* face = &mesh->mFaces[t];
@@ -135,6 +145,8 @@ void recursive_render (const aiScene *sc, const aiNode* nd,const aiScene* scene)
 					glColor4fv((GLfloat*)&mesh->mColors[0][index]);
 				if(mesh->mNormals != NULL)
 					glNormal3fv(&mesh->mNormals[index].x);
+                if(mesh->HasTextureCoords(0))
+                    glTexCoord2f(mesh->mTextureCoords[0][index].x, 1- mesh->mTextureCoords[0][index].y);
 				glVertex3fv(&mesh->mVertices[index].x);
 			}
 
@@ -145,7 +157,7 @@ void recursive_render (const aiScene *sc, const aiNode* nd,const aiScene* scene)
 
 	// draw all children
 	for (n = 0; n < nd->mNumChildren; ++n) {
-		recursive_render(sc, nd->mChildren[n], scene);
+		recursive_render(sc, nd->mChildren[n], scene,renderer);
 	}
 
 	glPopMatrix();
@@ -234,8 +246,8 @@ void GLRenderer::SetProjection()
 void GLRenderer::DrawMesh(UINT meshId, POVector3* pos, POVector3* o)
 {
 	glPushMatrix();
-	//glRotatef(o->_1, 1.0f, 0, 0);
-	//glRotatef(o->_3, 0, 0, 1.0f);
+	glRotatef(o->_1*180/PI, 1.0f, 0, 0);
+	glRotatef(o->_3*180/PI, 0, 0, 1.0f);
 	glTranslatef(pos->_1, pos->_2, pos->_3);
 	glRotatef(o->_2*180/PI, 0, 1.0f, 0);
 	//glScalef (0.0125, 0.0125, 0.0125);
@@ -343,10 +355,11 @@ void GLRenderer::AddTexture(UINT textureId, const std::wstring& fileName)
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
+    std::string str = Convert(fileName);
+
 	if (fileName.find(L".dds") != std::wstring::npos)
 	{
 		nv_dds::CDDSImage image;
-		std::string str = Convert(fileName);
 		str.replace(str.find("\\"), 1, "/"); //@FIXTHIS - Move this somewhere better
 		image.load(str.c_str(), false);//fileName);
 		texture->h=image.get_height();
@@ -360,28 +373,22 @@ void GLRenderer::AddTexture(UINT textureId, const std::wstring& fileName)
 	    }
 	    glPopAttrib();
 	} else {
-/*
-	char buffer[fileName.length()+1];
-	int ret = wcstombs( buffer, fileName.c_str(), sizeof(buffer) );
-	buffer[sizeof(buffer)]=0;
-	// checking ret here.
-
-	SDL_Surface *surface;
-	surface = IMG_Load(buffer);
-	if (!surface) { fprintf(stderr,"TextureLoadFailed(FileNotFound)"); return; }
-	SDL_SetColorKey(surface, SDL_SRCCOLORKEY, SDL_MapRGB(surface->format, 255,0,255));
-	SDL_Surface* tmp=SDL_DisplayFormatAlpha(surface);
-	SDL_FreeSurface( surface );
-	surface = tmp;
-	glGenTextures( 1, (GLuint*)texture->texture );
-	glBindTexture( GL_TEXTURE_2D, *(GLuint*)texture->texture );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexImage2D( GL_TEXTURE_2D, 0, surface->format->BytesPerPixel, surface->w, surface->h, 0,
-			GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels );
-	texture->h=surface->h;
-	texture->w=surface->w;
-	SDL_FreeSurface( surface );*/
+		SDL_Surface *surface;
+		surface = IMG_Load(str.c_str());
+		if (!surface) { fprintf(stderr,"TextureLoadFailed(FileNotFound)"); return; }
+		//SDL_SetColorKey(surface, SDL_SRCCOLORKEY, SDL_MapRGB(surface->format, 255,0,255));
+		//SDL_Surface* tmp=SDL_DisplayFormatAlpha(surface);
+		//SDL_FreeSurface( surface );
+		//surface = tmp;
+		glGenTextures( 1, (GLuint*)texture->texture );
+		glBindTexture( GL_TEXTURE_2D, *(GLuint*)texture->texture );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, surface->format->BytesPerPixel, surface->w, surface->h, 0,
+				GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels );
+		texture->h=surface->h;
+		texture->w=surface->w;
+		SDL_FreeSurface( surface );
 	}
 
 	if (texture!=0) {
@@ -409,7 +416,7 @@ void GLRenderer::AddMesh(const std::wstring& fileName)
 	mesh->mesh = (void*)(GLuint*)id;
 
 	glNewList(id, GL_COMPILE);
-    	recursive_render(scene, scene->mRootNode, scene);
+    	recursive_render(scene, scene->mRootNode, scene,this);
     glEndList();
 	_meshes.push_back(mesh);
 }

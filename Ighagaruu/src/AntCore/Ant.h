@@ -57,4 +57,18 @@ std::string inline Convert(const std::wstring& str)
 	}
 }
 
+std::wstring inline Convert(const std::string& str)
+{
+	int bufferlen = str.length()+1;
+	wchar_t buffer[bufferlen];
+	int ret = mbstowcs( buffer, str.c_str(), bufferlen);
+	if (ret == bufferlen-1)
+	{
+		buffer[bufferlen]=0;
+		return std::wstring(buffer);
+	} else {
+		return std::wstring(L""); // error here
+	}
+}
+
 #endif

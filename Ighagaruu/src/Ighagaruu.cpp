@@ -1145,11 +1145,11 @@ void OnFrameRender(float fTime)
 		}
 	Renderer->EndScene();
 }
-
+float z;
 void IntroFrameRender(float fTime) {
-	float z = sin ((float)fTime/10)/8.0f;
-	float y = sin ((float)fTime/10)/8.0f;
-	Renderer->SetView(POVector3(z,10.0f,-3.0f),POVector3(0.0f,0.0f,0.0f));		// Set view matrix
+	z+=0.11f;
+	float y = z;
+	Renderer->SetView(POVector3(100.0f,50.0f,60.0f),POVector3(0.0f,y+2.25f,y));		// Set view matrix
 
 	/*HRESULT hr;
 	D3DXMATRIXA16 mWorld;
