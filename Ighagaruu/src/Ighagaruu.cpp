@@ -462,7 +462,7 @@ int main(int argc, char* argv)
 
 	pMusic->Reset();
 	pMusic->Play( 0, 0, (LONG) 1 );
-
+	Renderer->AddMesh(L"media\\introscene.X");
 	AntWrapRun();
 	AntWrapQuit(Renderer);
 
@@ -1199,6 +1199,7 @@ void IntroFrameRender(float fTime) {
 		g_pEffect->EndPass();
 	}
 	g_pEffect->End();*/
+	Renderer->SetProjection();
 	Renderer->DrawMesh(0,POVector3(0.0f, 0.0f, 0.0f), POVector3(0.0f, 0.0f, 0.0f));
 	g_LoginUI.Render( fTime );
 	g_LoginPopUp.Render( fTime );

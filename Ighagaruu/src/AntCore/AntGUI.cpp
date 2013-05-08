@@ -81,6 +81,12 @@ void AntGUIElement::SetTexture(UINT id, RECT* textureRect, AntFontColorARGB font
 {
 	_textureId=id;
 	_textureRect=*textureRect;
+	_textureRect.left=_textureRect.x;
+	_textureRect.top=_textureRect.y;
+	_textureRect.right=_textureRect.w;
+	_textureRect.bottom=_textureRect.h;
+	_textureRect.w=_textureRect.right-_textureRect.left;
+	_textureRect.h=_textureRect.bottom-_textureRect.top;
 }
 
 void AntGUIElement::SetFont(UINT id, AntFontColorARGB fontColor)
@@ -431,17 +437,18 @@ AntGUIButton::AntGUIButton(AntGUIDialog* parent)
 
 	elem.SetFont(0,AntFontColorARGB(255,0,0,0));						// Button up
 	//SetRect(&rct,0,0,64,19);
-	SetRect(&rct,64,0,128,19);
+	//@FIXTHIS SHOULD REMOVE SPECIFIC DEFAULT SETTINGS OVERRIDE
+	SetRect(&rct,0,0,136, 54);
 	elem.SetTexture(0,rct);
 	_elements.push_back(elem);
 
 	elem.SetFont(0,AntFontColorARGB(255,180,180,180));						// Mouse Over
-	SetRect(&rct,64,0,128,19);
+	SetRect(&rct,0,0,136, 54);
 	elem.SetTexture(0,rct);
 	_elements.push_back(elem);
 
 	elem.SetFont(0,AntFontColorARGB(255,255,255,255));						// Button down
-	SetRect(&rct,128,0,192,19);
+	SetRect(&rct,0,0,136, 54);
 	elem.SetTexture(0,rct);
 	_elements.push_back(elem);
 
@@ -713,9 +720,51 @@ AntGUITextBox::AntGUITextBox(AntGUIDialog* parent)
 	AntGUIElement elem;
 	RECT rct;
 
-	elem.SetFont(0,AntFontColorARGB(255,255,255,255));						//	Background
-	SetRect(&rct,64,19,127,38);
-	elem.SetTexture(0,rct);
+	//@FIXTHIS Again should maybe create an extended class of this in DXUTToAntCore
+
+	elem.SetFont(0,AntFontColorARGB(255,255,255,255));
+    SetRect( &rct, 14, 90, 241, 113 );
+	elem.SetTexture(0,&rct,AntFontColorARGB(255,255,255,255));
+	_elements.push_back(elem);
+
+	elem.SetFont(0,AntFontColorARGB(255,255,255,255));
+    SetRect( &rct, 8, 82, 14, 90 );
+	elem.SetTexture(0,&rct,AntFontColorARGB(255,255,255,255));
+	_elements.push_back(elem);
+
+	elem.SetFont(0,AntFontColorARGB(255,255,255,255));
+    SetRect( &rct, 14, 82, 241, 90 );
+	elem.SetTexture(0,&rct,AntFontColorARGB(255,255,255,255));
+	_elements.push_back(elem);
+
+	elem.SetFont(0,AntFontColorARGB(255,255,255,255));
+    SetRect( &rct, 241, 82, 246, 90 );
+	elem.SetTexture(0,&rct,AntFontColorARGB(255,255,255,255));
+	_elements.push_back(elem);
+
+	elem.SetFont(0,AntFontColorARGB(255,255,255,255));
+    SetRect( &rct, 8, 90, 14, 113 );
+	elem.SetTexture(0,&rct,AntFontColorARGB(255,255,255,255));
+	_elements.push_back(elem);
+
+	elem.SetFont(0,AntFontColorARGB(255,255,255,255));
+    SetRect( &rct, 241, 90, 246, 113 );
+	elem.SetTexture(0,&rct,AntFontColorARGB(255,255,255,255));
+	_elements.push_back(elem);
+
+	elem.SetFont(0,AntFontColorARGB(255,255,255,255));
+    SetRect( &rct, 8, 113, 14, 121 );
+	elem.SetTexture(0,&rct,AntFontColorARGB(255,255,255,255));
+	_elements.push_back(elem);
+
+	elem.SetFont(0,AntFontColorARGB(255,255,255,255));
+    SetRect( &rct, 14, 113, 241, 121 );
+	elem.SetTexture(0,&rct,AntFontColorARGB(255,255,255,255));
+	_elements.push_back(elem);
+
+	elem.SetFont(0,AntFontColorARGB(255,255,255,255));
+    SetRect( &rct, 241, 113, 246, 121 );
+	elem.SetTexture(0,&rct,AntFontColorARGB(255,255,255,255));
 	_elements.push_back(elem);
 
 	_parent=parent;
