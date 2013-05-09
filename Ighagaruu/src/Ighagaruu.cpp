@@ -1149,8 +1149,6 @@ float z;
 void IntroFrameRender(float fTime) {
 	z+=0.11f;
 	float y = z;
-	Renderer->SetView(POVector3(100.0f,50.0f,60.0f),POVector3(0.0f,y+2.25f,y));		// Set view matrix
-
 	/*HRESULT hr;
 	D3DXMATRIXA16 mWorld;
 	D3DXMATRIXA16 mView;
@@ -1200,7 +1198,8 @@ void IntroFrameRender(float fTime) {
 	}
 	g_pEffect->End();*/
 	Renderer->SetProjection();
-	Renderer->DrawMesh(0,POVector3(0.0f, 0.0f, 0.0f), POVector3(0.0f, 0.0f, 0.0f));
+	Renderer->SetView(POVector3(-20.0f, 3.0f, 10.0f),POVector3(0.0f,0.0f,0.0f));		// Set view matrix
+	Renderer->DrawMesh(0,POVector3(100.0f, -10.0f,	60.0f), POVector3(0.0f,sin ((float)y/10)/8.0f + 2.25f ,0.0f));
 	g_LoginUI.Render( fTime );
 	g_LoginPopUp.Render( fTime );
 }

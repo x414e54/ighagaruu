@@ -224,7 +224,7 @@ void GLRenderer::SetView(POVector3* pos, POVector3* target)
 {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glScalef (-1., 1., 1.);
+	//glScalef (1., 1., -1.);
 	gluLookAt(pos->_1, pos->_2, pos->_3,
 	          target->_1, target->_2, target->_3,
 	          0.0, 1.0, 0.0);
@@ -246,10 +246,12 @@ void GLRenderer::SetProjection()
 void GLRenderer::DrawMesh(UINT meshId, POVector3* pos, POVector3* o)
 {
 	glPushMatrix();
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
 	glRotatef(o->_1*180/PI, 1.0f, 0, 0);
 	glRotatef(o->_3*180/PI, 0, 0, 1.0f);
-	glTranslatef(pos->_1, pos->_2, pos->_3);
 	glRotatef(o->_2*180/PI, 0, 1.0f, 0);
+	glTranslatef(pos->_1, pos->_2, pos->_3);
 	//glScalef (0.0125, 0.0125, 0.0125);
 	//teapot(10, 1.0f, GL_LINE);
 	AntMesh* mesh = _meshes.at(meshId);
