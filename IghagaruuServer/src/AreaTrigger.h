@@ -1,14 +1,8 @@
-class AreaTrigger;
+#ifndef AREATRIGGER_H
+#define AREATRIGGER_H
 
-#ifndef CHARACTER_H_
-#define CHARACTER_H_
 #include "Character.h"
-#endif
-
-#ifndef GAMESTATS_H_
-#define GAMESTATS_H_
 #include "GameStats.h"
-#endif
 
 struct VECTOR {
 	float x;
@@ -67,3 +61,4 @@ public:
 	int areatrigger_enabletrigger;
 	bool areatrigger_flag;
 };
+#endif

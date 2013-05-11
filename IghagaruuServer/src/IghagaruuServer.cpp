@@ -90,16 +90,7 @@ std::string toUppercase(std::string mcString) {
 // Main function
 int main(int argc, char* argv[])
 {
-
-//////////////
-
-//////////////////////
-    WSADATA wsaData;
-    SOCKET ListenSocket = INVALID_SOCKET,
-           ClientSocket = INVALID_SOCKET;
-    struct addrinfo *result = NULL,
-                    hints;
-    int iResult;
+	TCPsocket listenSocket;
     int recvbuflen = DEFAULT_BUFLEN;
 	
 	gamestats = new GameStats(&characters);
@@ -117,101 +108,69 @@ int main(int argc, char* argv[])
 	yadjust[5]=4.5f;
 	yadjust[6]=3.0f;
 	yadjust[7]=4.5f;
-    // Initialize Winsock
-    iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (iResult != 0) {
-        printf("WSAStartup failed: %d\n", iResult);
-        return 1;
-    }
 
-    ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
+	/* initialize SDL */
+	if(SDL_Init(0)==-1)
+	{
+		printf("SDL_Init: %s\n",SDL_GetError());
+		exit(1);
+	}
 
-    // Resolve the server address and port
-    iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
-    if ( iResult != 0 ) {
-        printf("getaddrinfo failed: %d\n", iResult);
-        WSACleanup();
-        return 1;
-    }
+	/* initialize SDL_net */
+	if(SDLNet_Init()==-1)
+	{
+		printf("SDLNet_Init: %s\n",SDLNet_GetError());
+		exit(2);
+	}
 
-    // Create a SOCKET for connecting to server
-    ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if (ListenSocket == INVALID_SOCKET) {
-        printf("socket failed: %ld\n", WSAGetLastError());
-        freeaddrinfo(result);
-        WSACleanup();
-        return 1;
-    }
+	IPaddress ip;
+	Uint16 port = DEFAULT_PORT;
 
-    // Setup the TCP listening socket
-    iResult = bind( ListenSocket, result->ai_addr, (int)result->ai_addrlen);
-    if (iResult == SOCKET_ERROR) {
-        printf("bind failed: %d\n", WSAGetLastError());
-        freeaddrinfo(result);
-        closesocket(ListenSocket);
-        WSACleanup();
-        return 1;
-    }
+	/* Resolve the argument into an IPaddress type */
+	if(SDLNet_ResolveHost(&ip,NULL,port)==-1)
+	{
+		printf("SDLNet_ResolveHost: %s\n",SDLNet_GetError());
+		exit(3);
+	}
 
-    freeaddrinfo(result);
+	/* open the server socket */
+    listenSocket=SDLNet_TCP_Open(&ip);
+	if(!server)
+	{
+		printf("SDLNet_TCP_Open: %s\n",SDLNet_GetError());
+		exit(4);
+	}
 
-    iResult = listen(ListenSocket, SOMAXCONN);
-    if (iResult == SOCKET_ERROR) {
-        printf("listen failed: %d\n", WSAGetLastError());
-        closesocket(ListenSocket);
-        WSACleanup();
-        return 1;
-    }
-	unsigned long b=1;
-	ioctlsocket(ListenSocket,FIONBIO,&b);
-	DWORD nThreadID2;
-	HANDLE thread = CreateThread(0, 0, ListenThread, (LPVOID)ListenSocket, 0, &nThreadID2);
+	listenThread=SDL_CreateThread(ListenThread,"ListenThread",listenSocket);
 
-	WaitForSingleObject(thread,INFINITE);
-    // No longer need server socket
-    closesocket(ListenSocket);
+	SDL_WaitThread(listenThread,NULL);
 
-    // shutdown the connection since we're done
-    iResult = shutdown(ClientSocket, SD_SEND);
-    if (iResult == SOCKET_ERROR) {
-        printf("shutdown failed: %d\n", WSAGetLastError());
-        closesocket(ClientSocket);
-        WSACleanup();
-        return 1;
-    }
+	/* shutdown SDL_net */
+	SDLNet_Quit();
 
-    // cleanup
-    closesocket(ClientSocket);
-    WSACleanup();
-
-
+	/* shutdown SDL */
+	SDL_Quit();
 	return 0;
 }
 
 // This is the listen thread, it constantly loops and waits for clients to connect
-DWORD WINAPI ListenThread(LPVOID lpParam)
+int ListenThread(void *data)
 {
-	SOCKET ListenSocket = (SOCKET)lpParam,
-          ClientSocket = INVALID_SOCKET;
+	TCPsocket listenSocket = (TCPsocket)data;
+	TCPsocket clientSocket;
 	while (true) {
     // Accept a client socket
-		ClientSocket = accept(ListenSocket, NULL, NULL);
-		if (ClientSocket != INVALID_SOCKET) {
-				DWORD nThreadID;
-				CreateThread(0, 0, ServerThread, (LPVOID)ClientSocket, 0, &nThreadID);
+		clientSocket = SDLNet_TCP_Accept(listenSocket);
+		if (!clientSocket) {
+				serverThread=SDL_CreateThread(ServerThread,"ServerThread",clientSocket);
 		}
-		Sleep(1);
-
+		SDL_Delay(1);
 	}
 	return 0;
 }
 
 // Server thread is spawned for seach individual client connection.
-DWORD WINAPI ServerThread(LPVOID lpParam)
+int ServerThread(void *data)
 {
 	bool closeconn=false;
 	MYSQL *conn;
@@ -220,14 +179,14 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 	Account* acc =NULL;
 	Character* chara=NULL;
 
-	SOCKET ClientSocket = (SOCKET)lpParam;
+	TCPsocket ClientSocket = (TCPsocket)data;
 
 	int iResult, iSendResult;
 	int recvbuflen = DEFAULT_BUFLEN;
 
 	do {
 		char recvbuf[DEFAULT_BUFLEN];
-		iResult = recv(ClientSocket, recvbuf, 512, 0);
+		iResult = SDLNet_TCP_Recv(ClientSocket,recvbuf,DEFAULT_BUFLEN);
 		if (iResult > 0)
 		{
 			char firstByte = recvbuf[0];
@@ -260,7 +219,7 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 					mysql_real_connect(conn, server,user, password, database, 0, NULL, 0);
 
 					char query[512];
-					sprintf_s(query,512,"SELECT userid, username, gamelevel, suspended FROM users WHERE username='%s' AND password='%s'",username.c_str(),passwordu.c_str());
+					snprintf(query,512,"SELECT userid, username, gamelevel, suspended FROM users WHERE username='%s' AND password='%s'",username.c_str(),passwordu.c_str());
 					mysql_query(conn, query);
 
 					res = mysql_store_result(conn);
@@ -275,7 +234,7 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 
 							char query[512];
 
-							sprintf_s(query,512,"UPDATE users SET online='1', lastonline='NOW()' WHERE userid='%i'",acc->userid);
+							snprintf(query,512,"UPDATE users SET online='1', lastonline='NOW()' WHERE userid='%i'",acc->userid);
 
 							mysql_query(conn, query);
 
@@ -304,7 +263,7 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 						mysql_real_connect(conn, server,user, password, database, 0, NULL, 0);
 
 						char query[512];
-						sprintf_s(query,512,"SELECT * FROM characters WHERE userid='%i'",acc->userid);
+						snprintf(query,512,"SELECT * FROM characters WHERE userid='%i'",acc->userid);
 
 						mysql_query(conn, query);
 
@@ -349,7 +308,7 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 						mysql_real_connect(conn, server,user, password, database, 0, NULL, 0);
 
 						char query[512];
-						sprintf_s(query,512,"SELECT character_id, character_name, character_faction, character_class FROM characters WHERE userid='%i' AND character_id='%i'",acc->userid,c.i);
+						snprintf(query,512,"SELECT character_id, character_name, character_faction, character_class FROM characters WHERE userid='%i' AND character_id='%i'",acc->userid,c.i);
 
 						mysql_query(conn, query);
 
@@ -399,7 +358,7 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 						for (unsigned int i=0; i<characters.size(); i++) {
 							if(characters.at(i)->id==c.i) {
 								notlogged=false;
-								closesocket(characters.at(i)->ClientSocket);
+								SDLNet_TCP_Close(characters.at(i)->ClientSocket);
 								characters.at(i)->ClientSocket=ClientSocket;
 								chara=characters.at(i);
 								chara->resetMaxHealth();
@@ -413,20 +372,19 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 						mysql_real_connect(conn, server,user, password, database, 0, NULL, 0);
 
 						char query[512];
-						sprintf_s(query,512,"SELECT * FROM characters WHERE userid='%i' AND character_id='%i'",acc->userid,c.i);
+						snprintf(query,512,"SELECT * FROM characters WHERE userid='%i' AND character_id='%i'",acc->userid,c.i);
 
 						mysql_query(conn, query);
 
 						res = mysql_store_result(conn);
 						if (res->row_count==1) {
 							chara=new Character(atoi(row[0]),row[1],(float)atof(row[3]),(float)atof(row[4]),(float)atof(row[5]),(float)atof(row[2]),atoi(row[6]),atoi(row[7]),atoi(row[10]),atoi(row[11]), atoi(row[12]), atoi(row[13]), atoi(row[14]), atoi(row[15]), atoi(row[16]), atoi(row[17]), atoi(row[18]), atoi(row[19]), atoi(row[20]), ClientSocket, gamestats);
-							DWORD nThreadID;
-							CreateThread(0, 0, UpdateThread, (LPVOID)chara, 0, &nThreadID);
-
+							SDL_Thread* updateThread=SDL_CreateThread(UpdateThread,"ServerThread",chara);
+							SDL_Delay(1);
 							sendbuff[0]=24;
 							//
 							char query[512];
-							sprintf_s(query,512,"SELECT * FROM character_spells WHERE character_id='%i'",chara->id);
+							snprintf(query,512,"SELECT * FROM character_spells WHERE character_id='%i'",chara->id);
 	
 							mysql_query(conn, query);
 
@@ -448,7 +406,7 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 							}
 
 							///
-							sprintf_s(query,512,"SELECT * FROM item i, character_items c WHERE c.character_id='%i' AND c.item_id=i.item_id",chara->id);
+							snprintf(query,512,"SELECT * FROM item i, character_items c WHERE c.character_id='%i' AND c.item_id=i.item_id",chara->id);
 	
 							mysql_query(conn, query);
 
@@ -485,20 +443,20 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 				}
 			}
 			if (needSend && sendbuff[0]!=-1) {
-				iSendResult = send( ClientSocket, sendbuff, 512, 0 );
+				iSendResult = SDLNet_TCP_Send(ClientSocket, sendbuff, DEFAULT_BUFLEN);
 			}
 		}
 		if(closeconn) {
 			return 0;
 		}
-		Sleep(1);
+		SDL_Delay(1);
 	} while (chara==NULL);
 	// Receive until the peer shuts down the connection
 	do {
 		char recvbuf[DEFAULT_BUFLEN];
 		int nLeft = recvbuflen;
 		int iPos = 0;
-		iResult = recv(ClientSocket, recvbuf, 512, 0);
+		iResult =  SDLNet_TCP_Recv(ClientSocket,recvbuf,DEFAULT_BUFLEN);
 		if (iResult > 0) {
 			char firstByte = recvbuf[0];
 			//Tokenizer* toke = new Tokenizer(recvbuf, ':');
@@ -881,7 +839,7 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 						bufint++;
 					}
 					sendbuf[bufint]=(char)1;
-					iSendResult = send( characters.at(i)->ClientSocket, sendbuf, 512, 0 );
+					iSendResult = SDLNet_TCP_Send(characters.at(i)->ClientSocket, sendbuf, DEFAULT_BUFLEN);
 
 				}
 			} else { //user
@@ -891,7 +849,7 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 					std::string checkname =toUppercase(characters.at(i)->info.name);
 					if (checkname==destname) {
 						found=true;
-						char sendbuf[512];
+						char sendbuf[DEFAULT_BUFLEN];
 						std::string name=chara->info.name;
 						int bufint=2;
 						sendbuf[0]=8;
@@ -907,7 +865,7 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 							bufint++;
 						}
 						sendbuf[bufint]=(char)1;
-						iSendResult = send( characters.at(i)->ClientSocket, sendbuf, 512, 0 );
+						iSendResult = SDLNet_TCP_Send(characters.at(i)->ClientSocket, sendbuf, DEFAULT_BUFLEN);
 
 					}
 				}
@@ -1051,21 +1009,19 @@ DWORD WINAPI ServerThread(LPVOID lpParam)
 		}
 			}
 			if (needSend && sendbuff[0]!=-1) {
-				iSendResult = send( ClientSocket, sendbuff, 512, 0 );
+				iSendResult = SDLNet_TCP_Send(ClientSocket, sendbuff, DEFAULT_BUFLEN);
 			}
 		}
 
-
-		Sleep(1);
-
+		SDL_Delay(1);
 	} while (true);
 	return 0;
 }
 
 // Update thread, is a tick thread that will update certain attributes every second.
-DWORD WINAPI UpdateThread(LPVOID lpParam)
+int UpdateThread(void *data)
 {
-	Character* upchara = (Character*)lpParam;
+	Character* upchara = (Character*)data;
 	int second=0;
 	while (true) {
 		if (second==1000) {
@@ -1078,7 +1034,7 @@ DWORD WINAPI UpdateThread(LPVOID lpParam)
 			second=second+50;
 		}
 		upchara->cast();
-		Sleep(50);
+		SDL_Delay(50);
 	}
 	return 0;
 }

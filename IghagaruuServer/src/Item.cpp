@@ -1,7 +1,4 @@
-#ifndef ITEM_H_
-#define ITEM_H_
 #include "Item.h"
-#endif
 Item::Item(int itemid,
 		   int itemdmg,
 		   int itemheal,

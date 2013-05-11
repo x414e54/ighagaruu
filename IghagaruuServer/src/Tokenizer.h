@@ -1,7 +1,9 @@
+#ifndef TOKENIZER_H
+#define TOKENIZER_H
+
 #include<sstream>
 class Tokenizer {
 public:
-Tokenizer(const char* string, char delimiter);
 Tokenizer(const char* string, char delimiter);
 ~Tokenizer();
 std::string getNext();
@@ -14,3 +16,4 @@ private:
 	std::string currentString;
 	char currentDelimiter;
 };
+#endif

@@ -1198,8 +1198,8 @@ void IntroFrameRender(float fTime) {
 	}
 	g_pEffect->End();*/
 	Renderer->SetProjection();
-	Renderer->SetView(POVector3(-20.0f, 3.0f, 10.0f),POVector3(0.0f,0.0f,0.0f));		// Set view matrix
-	Renderer->DrawMesh(0,POVector3(100.0f, -10.0f,	60.0f), POVector3(0.0f,sin ((float)y/10)/8.0f + 2.25f ,0.0f));
+	Renderer->SetView(POVector3(10.0f, 13.0f, 60.0f),POVector3(0.0f,0.0f,0.0f));		// Set view matrix
+	Renderer->DrawMesh(0,POVector3(-90.0f, 0.0f,0.0f), POVector3(0.0f,sin ((float)y/10)/8.0f,sin ((float)y/10)/8.0f));
 	g_LoginUI.Render( fTime );
 	g_LoginPopUp.Render( fTime );
 }

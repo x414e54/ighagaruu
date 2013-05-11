@@ -1,16 +1,11 @@
-class GameStats;
-#ifndef CHARACTER_H_
-#define CHARACTER_H_
-#include "Character.h"
-#endif
-#ifndef AURA_H_
-#define AURA_H_
-#include "Aura.h"
-#endif
-#ifndef AREATRIGGER_H_
-#define AREATRIGGER_H_
-#include "AreaTrigger.h"
-#endif
+#ifndef GAMESTATS_H
+#define GAMESTATS_H
+
+#include <vector>
+
+class Character;
+class AreaTrigger;
+
 class GameStats {
 public:
 	int blueteam;
@@ -26,3 +21,4 @@ public:
 	void RedScore();
 	void PickUpFlag(Character* chara);
 };
+#endif

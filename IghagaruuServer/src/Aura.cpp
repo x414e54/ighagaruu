@@ -1,7 +1,4 @@
-#ifndef AURA_H_
-#define AURA_H_
 #include "Aura.h"
-#endif
 Aura::Aura(int auraid,
 		   int auraintelligence,
 		   int auradexterity,

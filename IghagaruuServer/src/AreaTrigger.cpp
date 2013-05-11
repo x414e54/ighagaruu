@@ -1,8 +1,5 @@
-#ifndef AREATRIGGER_H_
-#define AREATRIGGER_H_
 #include "AreaTrigger.h"
-#endif
-
+#include "Aura.h"
 AreaTrigger::AreaTrigger(GameStats* gs, std::vector <Aura*> *as, std::vector <AreaTrigger*> *at){
 	gamestats=gs;
 	auras=as;

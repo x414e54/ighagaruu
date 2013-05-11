@@ -1,8 +1,11 @@
-#ifndef CHARACTER_H_
-#define CHARACTER_H_
 #include "Character.h"
-#endif
+#include "Aura.h"
+#include "Spell.h"
+#include "Item.h"
+#include "GameStats.h"
 
+#include <mysql/mysql.h>
+#define DEFAULT_BUFLEN 512
 struct FLOATARR {
 	char b[8];
 	float f;
@@ -63,7 +66,7 @@ struct ARRINT {
 		i=*ptr;
 	}
 };
-Character::Character(int cid, std::string cname, float cx, float cy, float cz, float co, int ch, int cm, int cfaction, int cclasss, int plusstam, int plusstr, int plusdex, int plusint, int pluswis, int pluspoints, int level, int xp, int money, SOCKET sock, GameStats* gs) {
+Character::Character(int cid, std::string cname, float cx, float cy, float cz, float co, int ch, int cm, int cfaction, int cclasss, int plusstam, int plusstr, int plusdex, int plusint, int pluswis, int pluspoints, int level, int xp, int money, TCPsocket sock, GameStats* gs) {
 	gamestats=gs;
 	info.autoAttack=false;
 	info.casting=NULL;
@@ -342,7 +345,7 @@ void Character::removeAura(int i) {
 		sendbuff[bufint]=ap.b[i];
 		bufint++;
 	}
-	send( ClientSocket, sendbuff, 512, 0 );
+	SDLNet_TCP_Send(ClientSocket, sendbuff, DEFAULT_BUFLEN);
 	resetMaxHealth();
 }
 
@@ -372,7 +375,7 @@ void Character::addAura(Aura* aura, Character* applier) {
 		sendbuff[bufint]=ap.b[i];
 		bufint++;
 	}
-	send( ClientSocket, sendbuff, 512, 0 );
+	SDLNet_TCP_Send(ClientSocket, sendbuff, DEFAULT_BUFLEN);
 	resetMaxHealth();
 }
 
@@ -407,7 +410,7 @@ void Character::die() {
 	char sendbuff[512];
 	sendbuff[0]=17;
 	sendbuff[1]=0;
-	send(ClientSocket, sendbuff, 512, 0 );
+	SDLNet_TCP_Send(ClientSocket, sendbuff, DEFAULT_BUFLEN);
 }
 
 void Character::resetPos() {
@@ -438,7 +441,7 @@ void Character::resetPos() {
 			sendbuff[bufint]=z.b[i];
 			bufint++;
 		}
-		send( ClientSocket, sendbuff, 512, 0 );
+		SDLNet_TCP_Send(ClientSocket, sendbuff, DEFAULT_BUFLEN);
 }
 
 void Character::addCash(int csh) {
@@ -452,7 +455,7 @@ void Character::addCash(int csh) {
 
 	inv.money+=csh;
 	char query[512];
-	sprintf_s(query,512,"UPDATE characters SET character_money='%i' WHERE character_id='%i'",inv.money, id);
+	snprintf(query,512,"UPDATE characters SET character_money='%i' WHERE character_id='%i'",inv.money, id);
 
 	mysql_query(conn, query);
 	mysql_close(conn); 

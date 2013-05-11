@@ -1,15 +1,10 @@
+#ifndef SPELL_H
+#define SPELL_H
+
 #include <string>
-
-class Spell;
-
-#ifndef CHARACTER_H_
-#define CHARACTER_H_
 #include "Character.h"
-#endif
-#ifndef AURA_H_
-#define AURA_H_
 #include "Aura.h"
-#endif
+
 class Spell {
 public:
 	
@@ -147,3 +142,4 @@ struct ARRINT {
 	bool spell_attackqueue;
 	std::vector <Aura*> *auras;
 };
+#endif

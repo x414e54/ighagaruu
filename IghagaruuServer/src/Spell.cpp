@@ -1,8 +1,7 @@
-#ifndef SPELL_H_
-#define SPELL_H_
 #include "Spell.h"
-#endif
-
+#include <SDL2/SDL_net.h>
+#include <mysql/mysql.h>
+#define DEFAULT_BUFLEN 512
 Spell::Spell(int spellid,
 			  int spellfaction,
 			  int spellclass,
@@ -98,7 +97,7 @@ void Spell::Cast(Character* char1, Character* char2, bool queued, bool casted) {
 							{
 								sendbuff[0]=6; 
 								sendbuff[1]=1; 
-								send( char1->ClientSocket, sendbuff, 512, 0 );
+								SDLNet_TCP_Send(char1->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 								char1->stats.magika=char1->stats.magika-spell_mana;
 								char1->stats.energy=char1->stats.energy-spell_energy;
 								char1->stats.hate=char1->stats.hate-spell_rage;
@@ -122,7 +121,7 @@ void Spell::Cast(Character* char1, Character* char2, bool queued, bool casted) {
 									sendbuff[bufint]=a.b[i];
 									bufint++;		
 								}
-								send( char2->ClientSocket, sendbuff, 512, 0 );
+								SDLNet_TCP_Send(char2->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 								sendbuff[0]=6; 
 								sendbuff[1]=2; 
 								bufint=2;
@@ -141,7 +140,7 @@ void Spell::Cast(Character* char1, Character* char2, bool queued, bool casted) {
 									sendbuff[bufint]=a2.b[i];
 									bufint++;		
 								}
-								send( char1->ClientSocket, sendbuff, 512, 0 );
+								SDLNet_TCP_Send(char1->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 
 								if ((char2->stats.health)-spell_dmg<=0)
 								{
@@ -194,49 +193,49 @@ void Spell::Cast(Character* char1, Character* char2, bool queued, bool casted) {
 										sendbuff[bufint]=t.b[i];
 										bufint++;		
 									}
-									send( char1->ClientSocket, sendbuff, 512, 0 );
+									SDLNet_TCP_Send(char1->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 								}
 							}
 						} else
 						{
 								sendbuff[0]=6; //focus
 								sendbuff[1]=4; 
-								send( char1->ClientSocket, sendbuff, 512, 0 );
+								SDLNet_TCP_Send(char1->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 						}
 					} else
 					{
 								sendbuff[0]=6; //rage
 								sendbuff[1]=5;
-								send( char1->ClientSocket, sendbuff, 512, 0 );
+								SDLNet_TCP_Send(char1->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 					}
 				} else
 				{
 								sendbuff[0]=6; //energy
 								sendbuff[1]=6;
-								send( char1->ClientSocket, sendbuff, 512, 0 );
+								SDLNet_TCP_Send(char1->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 				}
 			} else
 			{
 								sendbuff[0]=6; //not enough magika
 								sendbuff[1]=7;
-								send( char1->ClientSocket, sendbuff, 512, 0 );
+								SDLNet_TCP_Send(char1->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 			}
 		} else if (withinrange==0) // too close
 		{
 								sendbuff[0]=6; 
 								sendbuff[1]=8;
-								send( char1->ClientSocket, sendbuff, 512, 0 );
+								SDLNet_TCP_Send(char1->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 		} else if (withinrange==2) // too far
 		{
 								sendbuff[0]=6; 
 								sendbuff[1]=9;
-								send( char1->ClientSocket, sendbuff, 512, 0 );
+								SDLNet_TCP_Send(char1->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 		}
 	} else	// target is dead
 	{
 								sendbuff[0]=6; 
 								sendbuff[1]=10;
-								send( char1->ClientSocket, sendbuff, 512, 0 );
+								SDLNet_TCP_Send(char1->ClientSocket, sendbuff, DEFAULT_BUFLEN);
 	}
 
 }

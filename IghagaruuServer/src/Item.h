@@ -1,3 +1,6 @@
+#ifndef ITEM_H
+#define ITEM_H
+
 class Item {
 public:
 Item(int itemid,
@@ -77,3 +80,6 @@ int itemcost);
 	int item_cost;
 	int item_intelect;
 };
+
+
+#endif

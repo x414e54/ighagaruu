@@ -1,9 +1,8 @@
-class Aura;
+#ifndef AURA_H
+#define AURA_H
 
-#ifndef CHARACTER_H_
-#define CHARACTER_H_
-#include "Character.h"
-#endif
+class Character;
+
 class Aura {
 public:
 	Aura(int auraid,
@@ -58,3 +57,4 @@ public:
 	bool aura_removeondeath;
 	void tick(Character* char1);
 };
+#endif
