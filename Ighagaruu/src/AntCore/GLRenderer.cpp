@@ -5,6 +5,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "SDL2/SDL_image.h"
+#include "SDL2/SDL_ttf.h"
 
 //Open Asset Import Library Sample SimpleOpenGL.c
 //Move to its own class later
@@ -174,6 +175,11 @@ bool GLRenderer::Init(AntSettings settings)
 			return false;
 		}
 
+		if(TTF_Init()==-1)
+		{
+			return false;
+		}
+
 		SDL_GL_SetAttribute(SDL_GL_RED_SIZE,            8);
 		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,          8);
 		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,           8);
@@ -306,7 +312,44 @@ void GLRenderer::DrawSprite(UINT textureId, const RECT& src, const RECT& dst, co
 //-----------------------------------------------------------------------------
 void GLRenderer::DrawText(UINT fontId, const std::wstring& string, const RECT& dst, const AntFontColorARGB& fontColor)
 {
-	//if (string.empty())
+	AntFont* font = GetFont(fontId);
+	SDL_Surface* surface = TTF_RenderUNICODE_Blended((TTF_Font*)font->font,string.c_str(),(SDL_Color)fontColor);
+	GLuint* tex = new GLuint();
+
+	glGenTextures(1, tex);
+	glBindTexture(GL_TEXTURE_2D, *tex);
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexImage2D(GL_TEXTURE_2D, 0, surface->format->BytesPerPixel, surface->w, surface->h, 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+	SDL_FreeSurface(surface);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0, _settings._width, _settings._height, 0, 1, -1);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glEnable(GL_TEXTURE_2D);
+	glLoadIdentity();
+	glBindTexture(GL_TEXTURE_2D, *(GLuint*)tex);
+
+	float top = dst.top;
+	float left = dst.left;
+	float right = dst.right;
+	float bottom = dst.bottom;
+
+	glBegin(GL_QUADS);
+		glColor3f(1.0f,1.0f,1.0f);
+		glTexCoord2f(0, 0);  glVertex3f(left, top, 0);
+		glTexCoord2f(1, 0); glVertex3f(right, top, 0);
+		glTexCoord2f(1, 1); glVertex3f(right, bottom, 0);
+		glTexCoord2f(0, 1);  glVertex3f(left, bottom, 0);
+	glEnd();
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glDeleteTextures(1, tex);
 }
 
 //-----------------------------------------------------------------------------
@@ -336,7 +379,17 @@ void GLRenderer::DrawQuad(UINT textureID, RECT* rect, POVector3* pos, POVector3*
 //-----------------------------------------------------------------------------
 void GLRenderer::AddFont(const std::wstring& typeFace, UINT width, UINT height)
 {
-
+    std::string str = Convert(typeFace);
+	str.replace(str.find("\\"), 1, "/"); //@FIXTHIS - Move this somewhere better
+	TTF_Font* font=TTF_OpenFont(str.c_str(), height);
+	if(!font)
+	{
+		return;
+	}
+	AntFont* antFont = new AntFont;
+	antFont->typeFace=typeFace;
+	antFont->font = (void*) font;
+	_fonts.push_back(antFont);
 }
 
 //-----------------------------------------------------------------------------
@@ -428,6 +481,7 @@ void GLRenderer::AddMesh(const std::wstring& fileName)
 //-----------------------------------------------------------------------------
 bool GLRenderer::Cleanup()
 {
+	TTF_Quit();
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
