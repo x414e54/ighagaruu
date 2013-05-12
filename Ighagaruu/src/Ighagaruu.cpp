@@ -206,7 +206,7 @@ std::string serverip;
 //--------------------------------------------------------------------------------------
 
 #define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT "27115"
+#define DEFAULT_PORT 27115
 
 #define IDC_CHANGEDEVICE        1
 #define IDC_QUIT				2
@@ -344,9 +344,9 @@ void	Send();
 void	SendTick();
 int Receive(void* lpParam);
 int UpdateThread(void* lpParam);
-void LoginPopUp(const wchar_t* error);
+void LoginPopUp(std::wstring error);
 void ChosenChar(Character* chosen);
-void Chat(const wchar_t* user, const wchar_t* message);
+void Chat(std::wstring user, std::wstring message);
 void Target(Character* target);
 void Cast(int buttonId);
 void SetSpells();
@@ -1714,12 +1714,11 @@ void CharacterGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, voi
 				std::wstring next=toke->getNext();
 				if (Tokenizer::toUppercase(next)==L"SAY") {
 					std::wstring remaining=toke->getRemaining();
-					const wchar_t* cwremaining=remaining.c_str();
 					g_CharacterUI.GetEditBox(IDC_EDITBOX1)->SetTextColor( D3DCOLOR_ARGB( 255, 255, 255, 255 ) );
 					//g_CharacterUI.GetEditBox(IDC_EDITBOX1) ->SetText(cwremaining);	
 					if (nEvent==1537) {
 						movementDisabled=false;
-						Chat(L"#global",cwremaining);
+						Chat(L"#global",remaining);
 						g_CharacterUI.GetEditBox(IDC_EDITBOX1)->ClearText();
 						g_CharacterUI.GetEditBox(IDC_EDITBOX1)->SetVisible(false);
 					}
@@ -1727,12 +1726,11 @@ void CharacterGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, voi
 					if (toke->hasNext()) {
 						next=toke->getNext();
 						std::wstring remaining=toke->getRemaining();
-						const wchar_t* cwremaining=remaining.c_str();
 						g_CharacterUI.GetEditBox(IDC_EDITBOX1)->SetTextColor( D3DCOLOR_ARGB( 255, 128, 0, 255 ) );
 						//g_CharacterUI.GetEditBox(IDC_EDITBOX1) ->SetText(cwremaining);
 						if (nEvent==1537) {
 							movementDisabled=false;
-							Chat(next.c_str(),cwremaining);
+							Chat(next,remaining);
 							g_CharacterUI.GetEditBox(IDC_EDITBOX1)->ClearText();
 							g_CharacterUI.GetEditBox(IDC_EDITBOX1)->SetVisible(false);
 						}
@@ -1823,28 +1821,24 @@ void CALLBACK OnDestroyDevice( void* pUserContext )
 ///////////
 
 void Connect(std::wstring wusername, std::wstring wpassword) {
-	struct addrinfo *result = NULL,
-		*ptr = NULL,
-		hints;
 	//char recvbuf[DEFAULT_BUFLEN];
 	int iResult;
-	int recvbuflen = DEFAULT_BUFLEN;
 
 	/* initialize SDL_net */
 	if(SDLNet_Init()==-1)
 	{
 		LoginPopUp(L"Unable to connect.");
-		break;
+		return;
 	}
 
 	IPaddress ip;
-	Uint16 port = DEFAULT_PORT;serverip.c_str()
+	Uint16 port = DEFAULT_PORT;
 
 	/* Resolve the argument into an IPaddress type */
-	if(SDLNet_ResolveHost(&ip,NULL,port)==-1)
+	if(SDLNet_ResolveHost(&ip,serverip.c_str(),port)==-1)
 	{
 		LoginPopUp(L"Unable to connect.");
-		break;
+		return;
 	}
 
 	/* open the server socket */
@@ -1853,8 +1847,7 @@ void Connect(std::wstring wusername, std::wstring wpassword) {
 	if (ConnectSocket) {
 		char sendbuf[DEFAULT_BUFLEN];
 		sendbuf[0]=20;
-		int bufint=1;
-		snprintf(sendbuf+1,DEFAULT_BUFLEN,"%s %s ",wusername,wpassword);
+		snprintf(sendbuf+1,DEFAULT_BUFLEN,"%s %s ",Convert(wusername).c_str(),Convert(wpassword).c_str());
 		SDLNet_TCP_Send(ConnectSocket, sendbuf, 11);
 		//
 		char recvbuf[DEFAULT_BUFLEN];
@@ -1911,14 +1904,14 @@ void Connect(std::wstring wusername, std::wstring wpassword) {
 								int bufpos=5;
 								if (c.i==c2.i) {
 									std::string charname="";
-									while(recvbuf2[bufpos]!=' ') {
+									while(recvbuf2[bufpos]!=' '&& bufpos < DEFAULT_BUFLEN) {
 										charname=charname+recvbuf2[bufpos];
 										bufpos++;
 									}
 									bufpos++;
 									ARRINT f(recvbuf2[bufpos],recvbuf2[bufpos+1],recvbuf2[bufpos+2],recvbuf2[bufpos+3]);
 									ARRINT cl(recvbuf2[bufpos+4],recvbuf2[bufpos+5],recvbuf2[bufpos+6],recvbuf2[bufpos+7]);
-									Character* chara = new Character(c.i, charname, f.i, cl.i);
+									Character* chara = new Character(c.i, Convert(charname), f.i, cl.i);
 									myChars.push_back(chara);
 								}
 							}
@@ -2096,12 +2089,12 @@ int Receive(void* lpParam) {
 							if (characters.at(j).id==c.i) {
 								int bufpos=6;
 								found=true;
-								std::wstring charname=L"";
+								std::string charname="";
 								while(recvbuf[bufpos]!=' ') {
 									charname=charname+recvbuf[bufpos];
 									bufpos++;
 								}
-								characters.at(j).charname=charname;
+								characters.at(j).charname=Convert(charname);
 								bufpos++;
 								ARRINT m(recvbuf[bufpos],recvbuf[bufpos+1],recvbuf[bufpos+2],recvbuf[bufpos+3]);
 								characters.at(j).info.model=m.i;
@@ -2221,7 +2214,7 @@ int Receive(void* lpParam) {
 					break;
 						}
 				case 8: {
-					std::wstring msg;
+					std::string msg;
 					unsigned int m=2;
 					while (m<512 && recvbuf[m]!=(char)1) {
 						msg=msg+recvbuf[m];
@@ -2229,9 +2222,9 @@ int Receive(void* lpParam) {
 					}
 					
 					if (recvbuf[1]==0) {
-						msg=msg+L" says: ";
+						msg=msg+" says: ";
 					} else {
-						msg=msg+L" whispers: ";
+						msg=msg+" whispers: ";
 					}
 					m++;
 					while (m<512 && recvbuf[m]!=(char)1) {
@@ -2239,7 +2232,7 @@ int Receive(void* lpParam) {
 						m++;
 					}
 
-					g_CharacterUI.GetListBox( IDC_TEXTBOX1 )->InsertItem(0,msg,NULL);
+					g_CharacterUI.GetListBox( IDC_TEXTBOX1 )->InsertItem(0,Convert(msg),NULL);
 					break;
 						}
 				case 9: {
@@ -2588,7 +2581,7 @@ int UpdateThread(void* lpParam) {
 	return 0;
 }
 
-void LoginPopUp(const wchar_t* error) {
+void LoginPopUp(std::wstring error) {
 	g_LoginPopUp.GetStatic(IDC_LOGINERR)->SetText(error);
 	g_LoginPopUp.SetVisible(true);
 }
