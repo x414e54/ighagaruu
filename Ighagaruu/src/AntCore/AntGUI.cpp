@@ -435,7 +435,7 @@ AntGUIButton::AntGUIButton(AntGUIDialog* parent)
 	AntGUIElement elem;
 	RECT rct;
 
-	elem.SetFont(0,AntFontColorARGB(255,0,0,0));						// Button up
+	elem.SetFont(0,AntFontColorARGB(255,255,255,255));						// Button up
 	//SetRect(&rct,0,0,64,19);
 	//@FIXTHIS SHOULD REMOVE SPECIFIC DEFAULT SETTINGS OVERRIDE
 	SetRect(&rct,0,0,136, 54);

@@ -137,7 +137,9 @@ void recursive_render (const aiScene *sc, const aiNode* nd,const aiScene* scene,
 				case 3: face_mode = GL_TRIANGLES; break;
 				default: face_mode = GL_POLYGON; break;
 			}
-
+			glEnable(GL_TEXTURE_2D);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			glBegin(face_mode);
 
 			for(i = 0; i < face->mNumIndices; i++) {
@@ -152,6 +154,8 @@ void recursive_render (const aiScene *sc, const aiNode* nd,const aiScene* scene,
 			}
 
 			glEnd();
+			glDisable(GL_TEXTURE_2D);
+			glDisable(GL_BLEND);
 		}
 
 	}
@@ -241,9 +245,9 @@ void GLRenderer::SetView(POVector3* pos, POVector3* target)
 //-----------------------------------------------------------------------------
 void GLRenderer::SetProjection()
 {
-	   glMatrixMode(GL_PROJECTION);
-	   glLoadIdentity();
-	   gluPerspective(90, (float)_settings._width / (float)_settings._height, 1.0f, 1000.0f);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(90, (float)_settings._width / (float)_settings._height, 1.0f, 1000.0f);
 }
 
 //-----------------------------------------------------------------------------
@@ -278,8 +282,12 @@ void GLRenderer::DrawSprite(UINT textureId, const RECT& src, const RECT& dst, co
 	glOrtho(0, _settings._width, _settings._height, 0, 1, -1);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glEnable(GL_TEXTURE_2D);
 	glLoadIdentity();
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	AntTexture* texture = GetTexture(textureId);
 	glBindTexture(GL_TEXTURE_2D, *(GLuint*)texture->texture);
 	glTranslatef(pos._1, pos._2, 0.0);
@@ -296,12 +304,13 @@ void GLRenderer::DrawSprite(UINT textureId, const RECT& src, const RECT& dst, co
 	float bottom = dst.bottom;
 
 	glBegin(GL_QUADS);
-		glColor3f(1.0f,1.0f,1.0f);
 		glTexCoord2f(texleft, textop);  glVertex3f(left, top, 0);
 		glTexCoord2f(texright, textop); glVertex3f(right, top, 0);
 		glTexCoord2f(texright, texbottom); glVertex3f(right, bottom, 0);
 		glTexCoord2f(texleft, texbottom);  glVertex3f(left, bottom, 0);
 	glEnd();
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -312,8 +321,12 @@ void GLRenderer::DrawSprite(UINT textureId, const RECT& src, const RECT& dst, co
 //-----------------------------------------------------------------------------
 void GLRenderer::DrawText(UINT fontId, const std::wstring& string, const RECT& dst, const AntFontColorARGB& fontColor)
 {
+	if (string.empty()) return;
+    std::string str = Convert(string);
 	AntFont* font = GetFont(fontId);
-	SDL_Surface* surface = TTF_RenderUNICODE_Blended((TTF_Font*)font->font,string.c_str(),(SDL_Color)fontColor);
+	SDL_Color color = {fontColor._R,fontColor._G,fontColor._B};
+	SDL_Surface* surface = TTF_RenderUTF8_Blended((TTF_Font*)font->font,str.c_str(),color);
+	if (!surface) return;
 	GLuint* tex = new GLuint();
 
 	glGenTextures(1, tex);
@@ -322,7 +335,6 @@ void GLRenderer::DrawText(UINT fontId, const std::wstring& string, const RECT& d
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexImage2D(GL_TEXTURE_2D, 0, surface->format->BytesPerPixel, surface->w, surface->h, 0,
 			GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
-	SDL_FreeSurface(surface);
 
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -330,22 +342,27 @@ void GLRenderer::DrawText(UINT fontId, const std::wstring& string, const RECT& d
 	glOrtho(0, _settings._width, _settings._height, 0, 1, -1);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glEnable(GL_TEXTURE_2D);
 	glLoadIdentity();
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glBindTexture(GL_TEXTURE_2D, *(GLuint*)tex);
 
 	float top = dst.top;
 	float left = dst.left;
 	float right = dst.right;
 	float bottom = dst.bottom;
-
+	SDL_FreeSurface(surface);
 	glBegin(GL_QUADS);
-		glColor3f(1.0f,1.0f,1.0f);
 		glTexCoord2f(0, 0);  glVertex3f(left, top, 0);
 		glTexCoord2f(1, 0); glVertex3f(right, top, 0);
 		glTexCoord2f(1, 1); glVertex3f(right, bottom, 0);
 		glTexCoord2f(0, 1);  glVertex3f(left, bottom, 0);
 	glEnd();
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
 	glPopMatrix();
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -370,7 +387,7 @@ void GLRenderer::DrawQuad(UINT textureID, RECT* rect, POVector3* pos, POVector3*
 	    glTexCoord2f(1, 0); glVertex3f(rect->w, 0, rect->h);
 	    glTexCoord2f(0, 0); glVertex3f(rect->x, 0, rect->h);
 	glEnd();
-
+	glDisable(GL_TEXTURE_2D);
 	glPopMatrix();
 }
 
@@ -380,7 +397,8 @@ void GLRenderer::DrawQuad(UINT textureID, RECT* rect, POVector3* pos, POVector3*
 void GLRenderer::AddFont(const std::wstring& typeFace, UINT width, UINT height)
 {
     std::string str = Convert(typeFace);
-	str.replace(str.find("\\"), 1, "/"); //@FIXTHIS - Move this somewhere better
+	//str.replace(str.find("\\"), 1, "/"); //@FIXTHIS - Move this somewhere better
+	str = "media/" + str + ".ttf";
 	TTF_Font* font=TTF_OpenFont(str.c_str(), height);
 	if(!font)
 	{
@@ -430,11 +448,7 @@ void GLRenderer::AddTexture(UINT textureId, const std::wstring& fileName)
 	} else {
 		SDL_Surface *surface;
 		surface = IMG_Load(str.c_str());
-		if (!surface) { fprintf(stderr,"TextureLoadFailed(FileNotFound)"); return; }
-		//SDL_SetColorKey(surface, SDL_SRCCOLORKEY, SDL_MapRGB(surface->format, 255,0,255));
-		//SDL_Surface* tmp=SDL_DisplayFormatAlpha(surface);
-		//SDL_FreeSurface( surface );
-		//surface = tmp;
+		if (!surface) { fprintf(stderr,"TextureLoadFailed(FileNotFound-%s)",str.c_str()); return; }
 		glGenTextures( 1, (GLuint*)texture->texture );
 		glBindTexture( GL_TEXTURE_2D, *(GLuint*)texture->texture );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );

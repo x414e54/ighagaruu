@@ -453,6 +453,7 @@ int main(int argc, char* argv)
 	pMusic->Reset();
 	pMusic->Play( 0, 0, (LONG) 1 );
 	Renderer->AddMesh(L"media\\introscene.X");
+	Renderer->AddFont(L"Arial", 0, 10);
 	AntWrapRun();
 	AntWrapQuit(Renderer);
 
