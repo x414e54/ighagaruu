@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
 
 	/* open the server socket */
     listenSocket=SDLNet_TCP_Open(&ip);
-	if(!server)
+	if(!listenSocket)
 	{
 		printf("SDLNet_TCP_Open: %s\n",SDLNet_GetError());
 		exit(4);

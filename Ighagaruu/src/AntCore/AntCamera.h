@@ -24,6 +24,8 @@ public:
 	POVector3* GetPosition() { return _position.GetPosition(); }
 	POVector3* GetTarget() { return _target->GetPosition(); }
 	void SetTarget(PointMass* target) { _target=target; }
+	void SetViewParams(POVector3* vectEye, POVector3* vectAt) { fprintf(stderr,"SetViewParams re-implement");}
+	void SetRadius(float a, float b, float c) { fprintf(stderr,"SetRadius re-implement");}
 
 protected:
 	PointMass _position;

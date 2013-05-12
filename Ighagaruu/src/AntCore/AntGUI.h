@@ -307,7 +307,10 @@ public:
 	virtual void Render(float time);
 	virtual bool Event(UINT Event, UINT p1, UINT p2);
 	void AddOption(int id, const std::wstring& text, void** userData);
+	void InsertItem(int id, const std::wstring& text, void** userData) { AddOption(id, text, userData); }
 	void SetSelected(int id);
+	void SelectItem(int id) { SetSelected(id); }
+	void RemoveAllItems() { fprintf(stderr, "RemoveAllItems unimplemented"); }
 	void Open() { _opened=true; }
 	
 	void UpdateBoundingBox();

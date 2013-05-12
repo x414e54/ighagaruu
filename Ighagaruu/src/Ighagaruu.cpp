@@ -6,14 +6,6 @@
 
 #include "AntCore/DXUTToAntCore.h"
 
-//#include "DXUT.h"
-//#include "DXUTgui.h"
-//#include "DXUTguiIME.h"
-//#include "DXUTcamera.h"
-//#include "DXUTsettingsdlg.h"
-//#include "SDKmesh.h"
-//#include "SDKmisc.h"
-//#include "SDKsound.h"
 #include "resource.h"
 #include "Tokenizer.h"
 #include "ISFLoader.h"
@@ -21,10 +13,9 @@
 #include "IAFLoader.h"
 #include "Character.h"
 #include <vector>
-//#include <winsock2.h>
-//#include <ws2tcpip.h>
 #include <sstream>
 #include <math.h>
+#include "SDL2/SDL_net.h"
 
 #include "Spell.h"
 #include "Aura.h"
@@ -190,8 +181,7 @@ std::vector <Character> characters;
 std::vector <Item*> items;
 std::vector <Spell*> spells;
 std::vector <Aura*> auras;
-//WSADATA wsaData;
-//SOCKET ConnectSocket = INVALID_SOCKET;
+TCPsocket ConnectSocket;
 double					lastTime;
 //IDirect3DTexture9* Tex=0;
 CSoundManager           g_SndMgr;
@@ -343,17 +333,17 @@ void    LoginGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, void*
 void    CharacterGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext );
 void    CharacterChooseGUIEvent(UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext );
 
-void    OnLostDevice( void* pUserContext );
-void    OnDestroyDevice( void* pUserContext );
+//void    OnLostDevice( void* pUserContext );
+//void    OnDestroyDevice( void* pUserContext );
 
 void    InitApp();
 //HRESULT LoadMesh( IDirect3DDevice9* pd3dDevice, WCHAR* strFileName, ID3DXMesh** ppMesh );
 void    RenderText();
-void    Connect(const wchar_t* username, const wchar_t* password);
+void    Connect(std::wstring username, std::wstring password);
 void	Send();
 void	SendTick();
-//DWORD Receive(LPVOID lpParam);
-//DWORD UpdateThread(LPVOID lpParam);
+int Receive(void* lpParam);
+int UpdateThread(void* lpParam);
 void LoginPopUp(const wchar_t* error);
 void ChosenChar(Character* chosen);
 void Chat(const wchar_t* user, const wchar_t* message);
@@ -1772,10 +1762,7 @@ void CharacterGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, voi
 	case IDC_SPELLCAST11: if (myChar->inv.spells[10]!=NULL) { Cast(10); } break;
 	}
 }
-void Chat(const wchar_t* wuser, const wchar_t* wmessage) {fprintf(stderr,"Chat re-implement");}
-void ChosenChar(Character* c) {fprintf(stderr,"ChosenChar re-implement");}
-void Cast(int a) {fprintf(stderr,"Cast re-implement");}
-void Target(Character* targetchar) {fprintf(stderr,"Cast re-implement");}
+
 /*
 //--------------------------------------------------------------------------------------
 // Release D3D9 resources created in the OnD3D9ResetDevice callback 
@@ -1834,13 +1821,8 @@ void CALLBACK OnDestroyDevice( void* pUserContext )
 }*/
 
 ///////////
-/*
-void Connect(const wchar_t* wusername, const wchar_t* wpassword) {
-	LPSTR username=new CHAR[wcslen(wusername)+1];
-	LPSTR password=new CHAR[wcslen(wpassword)+1];
-	WideCharToMultiByte(CP_ACP,0,wusername,-1,username,(int)wcslen(wusername)+1,0,0);
-	WideCharToMultiByte(CP_ACP,0,wpassword,-1,password,(int)wcslen(wpassword)+1,0,0);
 
+void Connect(std::wstring wusername, std::wstring wpassword) {
 	struct addrinfo *result = NULL,
 		*ptr = NULL,
 		hints;
@@ -1848,50 +1830,36 @@ void Connect(const wchar_t* wusername, const wchar_t* wpassword) {
 	int iResult;
 	int recvbuflen = DEFAULT_BUFLEN;
 
-	// Initialize Winsock
-	iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-
-	ZeroMemory( &hints, sizeof(hints) );
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
-
-	// Resolve the server address and port
-	iResult = getaddrinfo(serverip.c_str(), DEFAULT_PORT, &hints, &result);
-
-	// Attempt to connect to an address until one succeeds
-	for(ptr=result; ptr != NULL ;ptr=ptr->ai_next) {
-
-		// Create a SOCKET for connecting to server
-		ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, 
-			ptr->ai_protocol);
-		unsigned long b=1;
-		//ioctlsocket(ConnectSocket,FIONBIO,&b);
-		// Connect to server.
-		iResult = connect( ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
-		//break;
+	/* initialize SDL_net */
+	if(SDLNet_Init()==-1)
+	{
+		LoginPopUp(L"Unable to connect.");
+		break;
 	}
-	if (iResult>=0) {
-		freeaddrinfo(result);
-		char sendbuf[512];
+
+	IPaddress ip;
+	Uint16 port = DEFAULT_PORT;serverip.c_str()
+
+	/* Resolve the argument into an IPaddress type */
+	if(SDLNet_ResolveHost(&ip,NULL,port)==-1)
+	{
+		LoginPopUp(L"Unable to connect.");
+		break;
+	}
+
+	/* open the server socket */
+	ConnectSocket=SDLNet_TCP_Open(&ip);
+
+	if (ConnectSocket) {
+		char sendbuf[DEFAULT_BUFLEN];
 		sendbuf[0]=20;
 		int bufint=1;
-		for (unsigned int i=0; i<strlen(username); i++) {
-			sendbuf[bufint]=username[i];
-			bufint++;
-		}
-		sendbuf[bufint]=' ';
-		bufint++;
-		for (unsigned int i=0; i<strlen(password); i++) {
-			sendbuf[bufint]=password[i];
-			bufint++;
-		}
-		sendbuf[bufint]=' ';
-		send(ConnectSocket,sendbuf,11,0);
+		snprintf(sendbuf+1,DEFAULT_BUFLEN,"%s %s ",wusername,wpassword);
+		SDLNet_TCP_Send(ConnectSocket, sendbuf, 11);
 		//
 		char recvbuf[DEFAULT_BUFLEN];
 
-		iResult = recv(ConnectSocket, recvbuf, 512, 0);
+		iResult = SDLNet_TCP_Recv(ConnectSocket,recvbuf,DEFAULT_BUFLEN);
 
 		if (iResult > 0) {
 			char firstByte = recvbuf[0];
@@ -1900,14 +1868,14 @@ void Connect(const wchar_t* wusername, const wchar_t* wpassword) {
 				char secondByte = recvbuf[1];
 				switch (secondByte) {
 			case 0: {
-				closesocket(ConnectSocket);
-				WSACleanup();
+				SDLNet_TCP_Close(ConnectSocket);
+				SDLNet_Quit();
 				LoginPopUp(L"Username or password invalid.");
 				break;
 					}
 			case 1: {
-				closesocket(ConnectSocket);
-				WSACleanup();
+				SDLNet_TCP_Close(ConnectSocket);
+				SDLNet_Quit();
 				LoginPopUp(L"Your Acccount has been suspended.");
 				break;
 					}
@@ -1915,8 +1883,8 @@ void Connect(const wchar_t* wusername, const wchar_t* wpassword) {
 				loggedin=true;
 				char sendbuf[1];
 				sendbuf[0]=21;
-				send(ConnectSocket,sendbuf,1,0);
-				iResult = recv(ConnectSocket, recvbuf, 512, 0);
+				SDLNet_TCP_Send(ConnectSocket, sendbuf, 1);
+				iResult = SDLNet_TCP_Recv(ConnectSocket,recvbuf,DEFAULT_BUFLEN);
 				if (iResult > 0) {
 					char firstByte = recvbuf[0];
 					switch (firstByte) {
@@ -1932,9 +1900,9 @@ void Connect(const wchar_t* wusername, const wchar_t* wpassword) {
 							sendbuf[bufint]=c.b[i];
 							bufint++;
 						}		
-						send(ConnectSocket,sendbuf,5,0);
+						SDLNet_TCP_Send(ConnectSocket, sendbuf, 5);
 						char recvbuf2[512];
-						iResult = recv(ConnectSocket, recvbuf2, 512, 0);
+						iResult = SDLNet_TCP_Recv(ConnectSocket,recvbuf2,DEFAULT_BUFLEN);
 
 						if (iResult > 0) {
 							char firstByte = recvbuf2[0];
@@ -1960,10 +1928,7 @@ void Connect(const wchar_t* wusername, const wchar_t* wpassword) {
 				}
 				g_CharacterChooseUI.GetListBox( IDC_CHARLIST )->RemoveAllItems();
 				for (unsigned int k=0; k<myChars.size() && k<=10; k++) {					
-					LPCSTR shortcname=myChars.at(k)->charname.c_str();
-					LPWSTR widecname=new WCHAR[strlen(shortcname)+1];
-					MultiByteToWideChar(0,0,shortcname,-1,widecname,(int)strlen(shortcname)+1);
-					g_CharacterChooseUI.GetListBox( IDC_CHARLIST )->InsertItem(k,widecname,(void*)myChars.at(k));
+					g_CharacterChooseUI.GetListBox( IDC_CHARLIST )->InsertItem(k,myChars.at(k)->charname,(void*)myChars.at(k));
 				}
 				if (myChars.size()>0) {
 				g_CharacterChooseUI.GetListBox( IDC_CHARLIST )->SelectItem(0);
@@ -1972,8 +1937,8 @@ void Connect(const wchar_t* wusername, const wchar_t* wpassword) {
 					   }
 			default: {
 				loggedin=false;
-				closesocket(ConnectSocket);
-				WSACleanup();
+				SDLNet_TCP_Close(ConnectSocket);
+				SDLNet_Quit();
 				LoginPopUp(L"Unknown Error");
 				break;
 					 }
@@ -1984,8 +1949,8 @@ void Connect(const wchar_t* wusername, const wchar_t* wpassword) {
 				break;
 					}
 			default: {
-				closesocket(ConnectSocket);
-				WSACleanup();
+				SDLNet_TCP_Close(ConnectSocket);
+				SDLNet_Quit();
 				LoginPopUp(L"Unknown Error");
 				break;
 					 }
@@ -1993,8 +1958,8 @@ void Connect(const wchar_t* wusername, const wchar_t* wpassword) {
 				break;
 					   }
 			default: {
-				closesocket(ConnectSocket);
-				WSACleanup();
+				SDLNet_TCP_Close(ConnectSocket);
+				SDLNet_Quit();
 				LoginPopUp(L"Unknown Error");
 				break;
 					 }
@@ -2006,11 +1971,11 @@ void Connect(const wchar_t* wusername, const wchar_t* wpassword) {
 
 }
 
-DWORD Receive(LPVOID lpParam) {
+int Receive(void* lpParam) {
 	while(true) {
-		SOCKET ConnectSocket = (SOCKET)lpParam;
+		TCPsocket ConnectSocket = (TCPsocket)lpParam;
 		char recvbuf[512];
-		int iResult = recv(ConnectSocket, recvbuf, 512, 0);
+		int iResult = SDLNet_TCP_Recv(ConnectSocket,recvbuf,DEFAULT_BUFLEN);
 
 		//////
 		if (iResult > 0) {
@@ -2131,7 +2096,7 @@ DWORD Receive(LPVOID lpParam) {
 							if (characters.at(j).id==c.i) {
 								int bufpos=6;
 								found=true;
-								std::string charname="";
+								std::wstring charname=L"";
 								while(recvbuf[bufpos]!=' ') {
 									charname=charname+recvbuf[bufpos];
 									bufpos++;
@@ -2256,7 +2221,7 @@ DWORD Receive(LPVOID lpParam) {
 					break;
 						}
 				case 8: {
-					std::string msg;
+					std::wstring msg;
 					unsigned int m=2;
 					while (m<512 && recvbuf[m]!=(char)1) {
 						msg=msg+recvbuf[m];
@@ -2264,9 +2229,9 @@ DWORD Receive(LPVOID lpParam) {
 					}
 					
 					if (recvbuf[1]==0) {
-						msg=msg+" says: ";
+						msg=msg+L" says: ";
 					} else {
-						msg=msg+" whispers: ";
+						msg=msg+L" whispers: ";
 					}
 					m++;
 					while (m<512 && recvbuf[m]!=(char)1) {
@@ -2274,10 +2239,7 @@ DWORD Receive(LPVOID lpParam) {
 						m++;
 					}
 
-					LPCSTR shorttext=msg.c_str();
-					LPWSTR widetext=new WCHAR[strlen(shorttext)+1];
-					MultiByteToWideChar(0,0,shorttext,-1,widetext,(int)strlen(shorttext)+1);
-					g_CharacterUI.GetListBox( IDC_TEXTBOX1 )->InsertItem(0,widetext,NULL);
+					g_CharacterUI.GetListBox( IDC_TEXTBOX1 )->InsertItem(0,msg,NULL);
 					break;
 						}
 				case 9: {
@@ -2451,7 +2413,7 @@ DWORD Receive(LPVOID lpParam) {
 			}
 		}
 		///
-		Sleep(1);
+		SDL_Delay(1);
 	}
 }
 void Send() {
@@ -2481,7 +2443,7 @@ void Send() {
 		sendbuff[bufint]=z.b[i];
 		bufint++;
 	}
-	send( ConnectSocket, sendbuff, 512, 0 );
+	SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 }
 
 void SendTick() {
@@ -2516,29 +2478,15 @@ void SendTick() {
 		sendbuff[bufint]=fo.b[i];
 		bufint++;
 	}
-	send( ConnectSocket, sendbuff, 512, 0 );
+	SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 }
 
-void Chat(const wchar_t* wuser, const wchar_t* wmessage) {
-	LPSTR user=new CHAR[wcslen(wuser)+1];
-	LPSTR message=new CHAR[wcslen(wmessage)+1];
-	WideCharToMultiByte(CP_ACP,0,wuser,-1,user,(int)wcslen(wuser)+1,0,0);
-	WideCharToMultiByte(CP_ACP,0,wmessage,-1,message,(int)wcslen(wmessage)+1,0,0);
+void Chat(std::wstring wuser, std::wstring wmessage) {
 	char sendbuf[512];
 	sendbuf[0]=8;  // say
 	int bufint=1;
-	for (unsigned int i=0; i<strlen(user); i++) {
-		sendbuf[bufint]=user[i];
-		bufint++;
-	}
-	sendbuf[bufint]=(char)1;
-	bufint++;
-	for (unsigned int i=0; i<strlen(message); i++) {
-		sendbuf[bufint]=message[i];
-		bufint++;
-	}
-	sendbuf[bufint]=(char)1;
-	send( ConnectSocket, sendbuf, 512, 0 );
+	snprintf(sendbuf+1,DEFAULT_BUFLEN,"%s%s",wuser.c_str(),wmessage.c_str());
+	SDLNet_TCP_Send(ConnectSocket, sendbuf, DEFAULT_BUFLEN);
 }
 
 void Target(Character* targetchar) {
@@ -2550,7 +2498,7 @@ void Target(Character* targetchar) {
 		sendbuf[bufint]=c.b[i];
 		bufint++;
 	}
-	send( ConnectSocket, sendbuf, 512, 0 );
+	SDLNet_TCP_Send(ConnectSocket, sendbuf, DEFAULT_BUFLEN);
 }
 
 void Cast(int buttonId) {
@@ -2562,28 +2510,29 @@ void Cast(int buttonId) {
 		sendbuf[bufint]=c.b[i];
 		bufint++;
 	}
-	send( ConnectSocket, sendbuf, 512, 0 );
+	SDLNet_TCP_Send(ConnectSocket, sendbuf, DEFAULT_BUFLEN);
 }
 
 
-DWORD UpdateThread(LPVOID lpParam) {
+int UpdateThread(void* lpParam) {
 	int time=0;
 	char sendbuff[512];
+	TCPsocket ConnectSocket = (TCPsocket)lpParam;
 	sendbuff[0]=9;
-	send( (SOCKET)lpParam, sendbuff, 512, 0 );
+	SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 	sendbuff[0]=10;
-	send( (SOCKET)lpParam, sendbuff, 512, 0 );
+	SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 	while(true) {
-		SOCKET ConnectSocket = (SOCKET)lpParam;
+
 		char sendbuff[512];
 		int iResult=0;
 		Send();
 		//sendbuff[0]=0;
 		//iResult = send( ConnectSocket, sendbuff, 512, 0 );
 		sendbuff[0]=1;
-		iResult = send( ConnectSocket, sendbuff, 512, 0 );
+		iResult = SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 		sendbuff[0]=3;
-		iResult = send( ConnectSocket, sendbuff, 512, 0 );
+		iResult = SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 		for (unsigned int j=0; j<characters.size(); j++) {
 			sendbuff[0]=4;
 			sendbuff[1]=0;
@@ -2593,7 +2542,7 @@ DWORD UpdateThread(LPVOID lpParam) {
 				sendbuff[bufint]=c.b[i];
 				bufint++;
 			}
-			iResult = send( ConnectSocket, sendbuff, 512, 0 );
+			iResult = SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 			sendbuff[0]=4;
 			sendbuff[1]=1;
 			bufint =2;
@@ -2601,7 +2550,7 @@ DWORD UpdateThread(LPVOID lpParam) {
 				sendbuff[bufint]=c.b[i];
 				bufint++;
 			}
-			iResult = send( ConnectSocket, sendbuff, 512, 0 );
+			iResult = SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 			sendbuff[0]=4;
 			sendbuff[1]=2;
 			bufint =2;
@@ -2609,32 +2558,32 @@ DWORD UpdateThread(LPVOID lpParam) {
 				sendbuff[bufint]=c.b[i];
 				bufint++;
 			}
-			iResult = send( ConnectSocket, sendbuff, 512, 0 );
+			iResult = SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 		}
 		sendbuff[0]=15;
-		iResult = send( ConnectSocket, sendbuff, 512, 0 );
+		iResult = SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 		if (time==1000) {
 			time=0;
 			sendbuff[0]=9;
-			iResult = send( ConnectSocket, sendbuff, 512, 0 );
+			iResult = SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 			for (int i=0; i<6; i++) {
 				sendbuff[0]=10;
 				sendbuff[1]=0;
 				sendbuff[2]=i;
-				iResult = send( ConnectSocket, sendbuff, 512, 0 );
+				iResult = SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 			}
 			for (int i=0; i<6; i++) {
 				sendbuff[0]=10;
 				sendbuff[1]=1;
 				sendbuff[2]=i;
-				iResult = send( ConnectSocket, sendbuff, 512, 0 );
+				iResult = SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 			}
 			sendbuff[0]=12;
-			iResult = send( ConnectSocket, sendbuff, 512, 0 );
+			iResult = SDLNet_TCP_Send(ConnectSocket, sendbuff, DEFAULT_BUFLEN);
 		} else {
 			time++;
 		}
-		Sleep(1);
+		SDL_Delay(1);
 	}
 	return 0;
 }
@@ -2654,11 +2603,11 @@ void ChosenChar(Character* chosen) {
 		sendbuf[bufint]=c.b[i];
 		bufint++;
 	}		
-	send(ConnectSocket,sendbuf,5,0);
+	SDLNet_TCP_Send(ConnectSocket, sendbuf, 5);
 	//
 	char recvbuf[DEFAULT_BUFLEN];
 
-	iResult = recv(ConnectSocket, recvbuf, 512, 0);
+	iResult = SDLNet_TCP_Recv(ConnectSocket,recvbuf,DEFAULT_BUFLEN);
 
 	if (iResult > 0) {
 		char firstByte = recvbuf[0];
@@ -2670,14 +2619,12 @@ void ChosenChar(Character* chosen) {
 				POVector3 vecAt (0.0f, -yadjust[myChar->info.classs+(myChar->info.faction*4)], -0.0f);
 				g_Camera.SetViewParams( &vecEye, &vecAt );
 				g_Camera.SetRadius(5.0f,1.0f,10.0f);
-				DWORD threadId;
 				sendbuf[0]=0;
-				send( ConnectSocket, sendbuf, 512, 0 );
-				CreateThread(0,0,Receive,(LPVOID)ConnectSocket,0,&threadId);
+				SDLNet_TCP_Send(ConnectSocket, sendbuf, DEFAULT_BUFLEN);
+				SDL_CreateThread(Receive,"Receive",ConnectSocket);
 				sendbuf[0]=12;
-				send(ConnectSocket,sendbuf,512,0);
-				DWORD threadId1;
-				CreateThread(0,0,UpdateThread,(LPVOID)ConnectSocket,0,&threadId1);
+				SDLNet_TCP_Send(ConnectSocket, sendbuf, DEFAULT_BUFLEN);
+				SDL_CreateThread(UpdateThread,"UpdateThread",ConnectSocket);
 				break;
 					   }
 			default:   {
@@ -2685,7 +2632,7 @@ void ChosenChar(Character* chosen) {
 					   }
 		}
 	}
-}*/
+}
 
 void SetSpells() {
 	int i=0;
