@@ -266,6 +266,7 @@ AntGUIComponent* AntGUIDialog::GetIntersect(int x, int y)
 	{
 		AntGUIComponent* component= _components.at(i);
 		RECT rect = component->GetBoundingBox();
+	    OffsetRect(&rect, _x, _y);
 		if (x>=rect.left && x<= rect.right && y>=rect.top && y<=rect.bottom) {
 			return component;
 		}
@@ -295,7 +296,6 @@ bool AntGUIDialog::Event( UINT uMsg, UINT p1, UINT p2)
                 mouse.y += 4;
 				AntGUIComponent* intersect=GetIntersect(mouse.x,mouse.y);
 				if (uMsg == ANTGUI_EVENT_LBUTTONDOWN) {
-			  		fprintf(stderr, "Mouse click resviced at %d, %d\n",mouse.x, mouse.y);
 					if (intersect!=NULL) { _focus=intersect; _focus->Event(uMsg, p1, p2); }
 					else { _focus=NULL; }
 					return false;
@@ -393,9 +393,9 @@ void AntGUIComponent::EventCall(void *vParam)
 	if (_eventFunction!=NULL)
 	{
 		_eventFunction(vParam);
-	} else {
-		_parent->EventCall(0,this->_id,this,vParam);
-	}
+	}// else {
+	_parent->EventCall(0,this->_id,this,vParam);
+	//}
 }
 
 //-----------------------------------------------------------------------------

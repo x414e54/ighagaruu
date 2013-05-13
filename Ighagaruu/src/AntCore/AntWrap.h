@@ -28,6 +28,10 @@ bool AntWrapQuit(AntRenderer* renderer);
 
 int AntWrapRun();
 
+int AntWrapRenderThread(void* data);
+int AntWrapUpdateThread(void* data);
+int AntWrapEventThread(void* data);
+
 //LRESULT CALLBACK WndProc(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #endif

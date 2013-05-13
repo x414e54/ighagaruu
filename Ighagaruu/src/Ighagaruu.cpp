@@ -1695,7 +1695,7 @@ void CharacterChooseGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pContro
 void LoginGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext ) {
 	switch( nControlID )
 	{
-	//case IDC_LOGIN: Connect(g_LoginUI.GetEditBox(IDC_USERNAME)->GetText(),g_LoginUI.GetEditBox(IDC_PASSWORD)->GetText()); break;
+	case IDC_LOGIN: Connect(g_LoginUI.GetEditBox(IDC_USERNAME)->GetText(),g_LoginUI.GetEditBox(IDC_PASSWORD)->GetText()); break;
 	case IDC_CLOSELOGINPOP: g_LoginPopUp.SetVisible(false); break;
 	}
 }

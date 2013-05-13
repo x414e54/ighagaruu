@@ -1,5 +1,6 @@
 #include "AntWrap.h"
 #include "GLRenderer.h"
+#include "SDL2/SDL_thread.h"
 
 PUPDATECALLBACK UpdateCallback;
 PRENDERCALLBACK RenderCallback;
@@ -36,18 +37,59 @@ bool AntWrapQuit(AntRenderer* renderer)
 	delete renderer;
 	return true;
 }
-
+bool run=true;
 //-----------------------------------------------------------------------------
 // Our main loop
 //-----------------------------------------------------------------------------
 int AntWrapRun()
-{////////// MOVE OUT SDL EVENTS
-	SDL_Event event;
+{
+
+	//SDL_Thread* renderThread = SDL_CreateThread(AntWrapRenderThread,"AntWrapRenderThread",NULL);
+	SDL_Thread* updateThread = SDL_CreateThread(AntWrapUpdateThread,"AntWrapUpdateThread",NULL);
+	SDL_Thread* eventThread = SDL_CreateThread(AntWrapEventThread,"AntWrapEventThread",NULL);
+
 	float lastTime = SDL_GetTicks();//(float)timeGetTime();
+	while(run)
+	{
+		float time = SDL_GetTicks();//(float)timeGetTime();
+		float timeDelta = time - lastTime;
+
+		/* If personal callbacks are set then call */
+		if (RenderCallback!=NULL) { RenderCallback(timeDelta); }
+		lastTime=time;
+	}
+	return 0;
+
+}
+
+int AntWrapRenderThread(void* data)
+{
+	return 0;
+}
+
+int AntWrapUpdateThread(void* data)
+{
+	float lastTime = SDL_GetTicks();//(float)timeGetTime();
+	while(run)
+	{
+		float time = SDL_GetTicks();//(float)timeGetTime();
+		float timeDelta = time - lastTime;
+
+		/* If personal callbacks are set then call */
+		if (UpdateCallback!=NULL) { UpdateCallback(timeDelta); }
+		lastTime=time;
+		SDL_Delay(1);
+	}
+	return 0;
+}
+
+int AntWrapEventThread(void* data)
+{
+	SDL_Event event;
 	ANTGUI_EVENT msg;
 	UINT p1 = 0;
 	UINT p2 = 0;
-	while(true)
+	while(run)
 	{
 		if(SDL_PollEvent(&event))
 		{
@@ -56,7 +98,7 @@ int AntWrapRun()
 		  	  bool down = false;
 			  switch(event.type)
 			  {
-			  	  case SDL_QUIT: return 1; break;
+			  	  case SDL_QUIT: run=false;return 1; break;
 			  	  case SDL_MOUSEMOTION:
 			  		  msg = ANTGUI_EVENT_MOUSEMOVE;
 			  		  p2 = SETDWORD(event.motion.x, event.motion.y);
@@ -76,7 +118,7 @@ int AntWrapRun()
 			  		  	  case SDLK_RETURN:  p1 = ANTGUI_EVENT_KEY_RETURN; break;
 			  		  	  case SDLK_SPACE:  p1 = ANTGUI_EVENT_KEY_SPACE; break;
 			  		  	  case SDLK_LSHIFT:  p1 = ANTGUI_EVENT_KEY_SHIFT; break;
-			  		  	  default: break;
+			  		  	  default: p1 = event.key.keysym.unicode; break;
 			  		  }
 			  		  //p1 = event.key.keysym.scancode;
 			  	  break;
@@ -96,16 +138,7 @@ int AntWrapRun()
 			  }
 			if (MsgCallback!=NULL) { MsgCallback(msg, p1, p2); }
 		}
-					{
-						float time = SDL_GetTicks();//(float)timeGetTime();
-						float timeDelta = time - lastTime;
-
-						/* If personal callbacks are set then call */
-						if (RenderCallback!=NULL) { RenderCallback(timeDelta); }
-						if (UpdateCallback!=NULL) { UpdateCallback(timeDelta); }
-						lastTime=time;
-
-					}
+		SDL_Delay(1);
 	}
 	return 0;
 }
